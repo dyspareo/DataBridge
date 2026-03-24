@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Insert Plant</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./css/styles.css" />
+</head>
+<body>
+  <header class="container">
+    <div class="card">
+      <div class="card-header">
+        <h3>Insert Plant</h3>
+      </div>
+      <div class="card-body">
+        <div id="alertBox" class="alert d-none"></div>
+        <form id="insertForm" class="fade-in">
+          <div class="table-responsive">
+            <table class="table">
+              <tbody>
+                <tr>
+                  <td><strong>Code</strong></td>
+                  <td>
+                    <input id="code" type="text" class="w-100" placeholder="Enter Code" style="padding:0.5rem;border:1px solid #e2e8f0;border-radius:6px;" />
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>Purchase Org</strong></td>
+                  <td>
+                    <input id="purchaseOrg" type="text" class="w-100" placeholder="Enter Purchase Org" style="padding:0.5rem;border:1px solid #e2e8f0;border-radius:6px;" />
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>Company Code ID</strong></td>
+                  <td>
+                    <input id="companyCodeId" type="text" class="w-100" placeholder="Enter Company Code ID" style="padding:0.5rem;border:1px solid #e2e8f0;border-radius:6px;" />
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>Company Code</strong></td>
+                  <td>
+                    <input id="companyCode" type="text" class="w-100" placeholder="Enter Company Code" style="padding:0.5rem;border:1px solid #e2e8f0;border-radius:6px;" />
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>Plant Code</strong></td>
+                  <td>
+                    <input id="plantCode" type="text" class="w-100" style="padding:0.5rem;border:1px solid #e2e8f0;border-radius:6px;" readonly />
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>Plant Name</strong></td>
+                  <td>
+                    <input id="plantName" type="text" class="w-100" placeholder="Enter Plant Name" style="padding:0.5rem;border:1px solid #e2e8f0;border-radius:6px;" required />
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>Plant Short Name</strong></td>
+                  <td>
+                    <input id="plantShortName" type="text" class="w-100" placeholder="Enter Plant Short Name" style="padding:0.5rem;border:1px solid #e2e8f0;border-radius:6px;" />
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>Branch Code</strong></td>
+                  <td>
+                    <input id="branchCode" type="text" class="w-100" placeholder="Enter Branch Code" style="padding:0.5rem;border:1px solid #e2e8f0;border-radius:6px;" />
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>SAP Value</strong></td>
+                  <td>
+                    <input id="sapValue" type="text" class="w-100" placeholder="Enter SAP Value" style="padding:0.5rem;border:1px solid #e2e8f0;border-radius:6px;" />
+                  </td>
+                </tr>
+                <tr style="display:none;">
+                  <td><strong>Status ID</strong></td>
+                  <td>
+                    <input id="statusId" type="number" class="w-100" placeholder="Enter Status ID" style="padding:0.5rem;border:1px solid #e2e8f0;border-radius:6px;" />
+                  </td>
+                </tr>
+                <tr style="display:none;">
+                  <td><strong>Created By</strong></td>
+                  <td>
+                    <input id="createdBy" type="number" class="w-100" placeholder="Enter Created By (user id)" style="padding:0.5rem;border:1px solid #e2e8f0;border-radius:6px;" />
+                  </td>
+                </tr>
+                <tr style="display:none;">
+                  <td><strong>Created Date</strong></td>
+                  <td>
+                    <input id="createdDate" type="datetime-local" class="w-100" style="padding:0.5rem;border:1px solid #e2e8f0;border-radius:6px;" />
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="d-flex justify-content-between mt-4">
+            <div>
+              <button id="btnBackHome" type="button" class="btn btn-outline-secondary">Back to Home</button>
+              <button id="btnCancel" type="button" class="btn btn-outline-secondary" style="margin-left:8px;">Cancel</button>
+            </div>
+            <button id="btnOk" type="submit" class="btn btn-success" style="background-color:#28a745;border-color:#28a745;color:white;">Insert</button>
+          </div>
+        </form>
+      </div>
+      <div class="card-footer text-center">Fill required fields and confirm to insert</div>
+    </div>
+  </header>
+
+  <script src="./js/plant-insert.js"></script>
+</body>
+</html>

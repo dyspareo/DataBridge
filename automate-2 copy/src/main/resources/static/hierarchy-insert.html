@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Add Hierarchy Recipient – ExcelFlow</title>
+  <!-- Google Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" />
+  <!-- Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: #f9fafb;
+      color: #1f2937;
+      line-height: 1.5;
+    }
+    .container {
+      width: 100%;
+      max-width: none;
+      padding: 20px 40px;
+    }
+    .card {
+      border: none;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      margin-bottom: 1.5rem;
+      border-radius: 0.5rem;
+      overflow: hidden;
+    }
+    .card-header {
+      background-color: #f3f4f6;
+      border-bottom: 1px solid #e5e7eb;
+      padding: 1rem 1.5rem;
+    }
+    .card-header h3 {
+      margin: 0;
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #111827;
+    }
+    .card-body {
+      padding: 1.5rem;
+    }
+    .form-label {
+      font-weight: 500;
+      color: #4b5563;
+      margin-bottom: 0.5rem;
+    }
+    .form-control {
+      border: 1px solid #d1d5db;
+      border-radius: 0.375rem;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.875rem;
+    }
+    .form-control:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    .form-control:read-only {
+      background-color: #f3f4f6;
+    }
+    .btn {
+      font-weight: 500;
+      padding: 0.5rem 1rem;
+      border-radius: 0.375rem;
+      font-size: 0.875rem;
+    }
+    .btn-primary {
+      background-color: #3b82f6;
+      border-color: #3b82f6;
+    }
+    .btn-primary:hover {
+      background-color: #2563eb;
+      border-color: #2563eb;
+    }
+    .btn-secondary {
+      background-color: #6b7280;
+      border-color: #6b7280;
+    }
+    .toast {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      z-index: 1100;
+    }
+    .required:after {
+      content: " *";
+      color: #ef4444;
+    }
+    
+    /* Full-width responsive adjustments */
+    @media (max-width: 768px) {
+      .container {
+        padding: 15px 20px;
+      }
+    }
+    
+    @media (max-width: 576px) {
+      .container {
+        padding: 10px 15px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container py-4">
+    <div class="card">
+      <div class="card-header">
+        <h3><i class="bi bi-diagram-3"></i> Add Hierarchy Recipient</h3>
+      </div>
+      <div class="card-body">
+        <form id="hierarchyForm" class="needs-validation" novalidate>
+          <!-- Hidden system fields -->
+          <input type="hidden" name="status_id" value="1">
+          <input type="hidden" name="created_by" value="2">
+          <input type="hidden" name="created_date" value="">
+          
+          <!-- Plant & Department -->
+          <div class="row mb-4">
+            <div class="col-12 mb-3">
+              <h5 class="border-bottom pb-2 mb-3">Plant & Department</h5>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="plant_name" class="form-label required">Plant Name</label>
+              <input type="text" class="form-control" id="plant_name" name="plant_name" required>
+              <div class="invalid-feedback">Plant name is required.</div>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="plant_code" class="form-label required">Plant Code</label>
+              <input type="text" class="form-control" id="plant_code" name="plant_code" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="dept_name" class="form-label required">Department Name</label>
+              <input type="text" class="form-control" id="dept_name" name="dept_name" required>
+              <div class="invalid-feedback">Department name is required.</div>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="dept_code" class="form-label required">Department Code</label>
+              <input type="text" class="form-control" id="dept_code" name="dept_code" required>
+            </div>
+          </div>
+
+          <!-- POC Details -->
+          <div class="row mb-4">
+            <div class="col-12 mb-3">
+              <h5 class="border-bottom pb-2 mb-3">Point of Contact (POC) Details</h5>
+            </div>
+            <div class="col-md-4 mb-3">
+              <label for="poc_login_name" class="form-label required">POC Login Name</label>
+              <input type="text" class="form-control" id="poc_login_name" name="poc_login_name" required>
+              <div class="invalid-feedback">POC login name is required.</div>
+            </div>
+            <div class="col-md-4 mb-3">
+              <label for="poc_emp_code" class="form-label required">POC Employee Code</label>
+              <input type="text" class="form-control" id="poc_emp_code" name="poc_emp_code" required>
+              <div class="invalid-feedback">POC employee code is required.</div>
+            </div>
+            <div class="col-md-4 mb-3">
+              <label for="poc_email" class="form-label required">POC Email</label>
+              <input type="email" class="form-control" id="poc_email" name="poc_email" required>
+              <div class="invalid-feedback">Valid POC email is required.</div>
+            </div>
+          </div>
+
+          <!-- Approver Details -->
+          <div class="row mb-4">
+            <div class="col-12 mb-3">
+              <h5 class="border-bottom pb-2 mb-3">Approver Details (Optional)</h5>
+            </div>
+            <div class="col-md-4 mb-3">
+              <label for="approver_login_name" class="form-label">Approver Login Name</label>
+              <input type="text" class="form-control" id="approver_login_name" name="approver_login_name">
+            </div>
+            <div class="col-md-4 mb-3">
+              <label for="approver_emp_code" class="form-label">Approver Employee Code</label>
+              <input type="text" class="form-control" id="approver_emp_code" name="approver_emp_code">
+            </div>
+            <div class="col-md-4 mb-3">
+              <label for="approver_email" class="form-label">Approver Email</label>
+              <input type="email" class="form-control" id="approver_email" name="approver_email">
+            </div>
+          </div>
+
+          <!-- CBS1 Details -->
+          <div class="row mb-4">
+            <div class="col-12 mb-3">
+              <h5 class="border-bottom pb-2 mb-3">CBS1 Details (Optional)</h5>
+            </div>
+            <div class="col-md-4 mb-3">
+              <label for="cbs1_login_name" class="form-label">CBS1 Login Name</label>
+              <input type="text" class="form-control" id="cbs1_login_name" name="cbs1_login_name">
+            </div>
+            <div class="col-md-4 mb-3">
+              <label for="cbs1_emp_code" class="form-label">CBS1 Employee Code</label>
+              <input type="text" class="form-control" id="cbs1_emp_code" name="cbs1_emp_code">
+            </div>
+            <div class="col-md-4 mb-3">
+              <label for="cbs1_email" class="form-label">CBS1 Email</label>
+              <input type="email" class="form-control" id="cbs1_email" name="cbs1_email">
+            </div>
+          </div>
+
+          <!-- CBS2 Details -->
+          <div class="row mb-4">
+            <div class="col-12 mb-3">
+              <h5 class="border-bottom pb-2 mb-3">CBS2 Details (Optional)</h5>
+            </div>
+            <div class="col-md-4 mb-3">
+              <label for="cbs2_login_name" class="form-label">CBS2 Login Name</label>
+              <input type="text" class="form-control" id="cbs2_login_name" name="cbs2_login_name">
+            </div>
+            <div class="col-md-4 mb-3">
+              <label for="cbs2_emp_code" class="form-label">CBS2 Employee Code</label>
+              <input type="text" class="form-control" id="cbs2_emp_code" name="cbs2_emp_code">
+            </div>
+            <div class="col-md-4 mb-3">
+              <label for="cbs2_email" class="form-label">CBS2 Email</label>
+              <input type="email" class="form-control" id="cbs2_email" name="cbs2_email">
+            </div>
+          </div>
+
+          <!-- Form Actions -->
+          <div class="d-flex justify-content-between mt-4 pt-3 border-top">
+            <a href="javascript:history.back()" class="btn btn-secondary">
+              <i class="bi bi-arrow-left"></i> Back
+            </a>
+            <button type="button" id="loadDataBtn" class="btn btn-info" style="background-color:#17a2b8;border-color:#17a2b8;color:white;">
+              <i class="bi bi-download"></i> Load Data
+            </button>
+            <button type="submit" class="btn btn-success" style="background-color:#28a745;border-color:#28a745;color:white;">
+              <i class="bi bi-check-circle"></i> Submit
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast for notifications -->
+  <div class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true" id="toast">
+    <div class="d-flex">
+      <div class="toast-body" id="toast-message"></div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+    </div>
+  </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const API_BASE = (location.protocol === 'file:') ? 'http://localhost:8080' : '';
+    let currentModule = 'FAT';
+
+    // Initialize page
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Set current date for created_date
+      document.querySelector('input[name="created_date"]').value = new Date().toISOString();
+      
+      // Parse URL parameters and prefill fields
+      const params = new URLSearchParams(window.location.search);
+      currentModule = (params.get('module') || 'FAT').toUpperCase();
+      
+      if (currentModule === 'FAB') {
+        setupFabMode();
+        const loadDataBtnFab = document.getElementById('loadDataBtn');
+        if (loadDataBtnFab) {
+          loadDataBtnFab.style.display = 'inline-block';
+          loadDataBtnFab.innerHTML = '<i class="bi bi-download"></i> Load Data';
+          loadDataBtnFab.addEventListener('click', async () => {
+            fillFieldsFromUrlParams(params);
+            await fillDeptIdByDepartmentCode();
+            await fillUserFieldsByEmail();
+            showToast('FAB data loaded successfully!', 'success');
+          });
+        }
+        const formFab = document.getElementById('hierarchyForm');
+        formFab.addEventListener('submit', handleFormSubmit);
+        return;
+      }
+
+      // Only prefill basic parameters from URL, leave Excel data loading for Load Data button
+      if (params.has('plant_code')) {
+        document.getElementById('plant_code').value = params.get('plant_code');
+      }
+      if (params.has('dept_code')) {
+        document.getElementById('dept_code').value = params.get('dept_code');
+      }
+      if (params.has('poc_email')) {
+        document.getElementById('poc_email').value = params.get('poc_email');
+      }
+      // Prefill additional emails if provided in URL params
+      if (params.has('approver_email')) {
+        document.getElementById('approver_email').value = params.get('approver_email');
+      }
+      if (params.has('cbs1_email')) {
+        document.getElementById('cbs1_email').value = params.get('cbs1_email');
+      }
+      if (params.has('cbs2_email')) {
+        document.getElementById('cbs2_email').value = params.get('cbs2_email');
+      }
+      
+      // Note: All other field population is now handled by the Load Data button
+      console.log('Basic parameters loaded. Click "Load Data" to populate all fields from Excel data.');
+
+      // Prefill plant/dept codes and all emails from uploaded Excel (sessionStorage) if empty
+      (function tryPrefillFromExcelOnLoad() {
+        try {
+          const excelData = JSON.parse(sessionStorage.getItem('excelData')) || [];
+          const currentRow = JSON.parse(sessionStorage.getItem('currentHierarchyRow')) || {};
+          if (excelData.length === 0 && Object.keys(currentRow).length === 0) return;
+
+          const norm = (s) => String(s || '').toLowerCase().replace(/\s+|_/g, '');
+          const findByCandidates = (row, cands = []) => {
+            const keys = Object.keys(row || {});
+            for (const cand of cands) {
+              const nc = norm(cand);
+              const hit = keys.find(k => norm(k) === nc);
+              if (hit && row[hit] != null && String(row[hit]).trim() !== '') return String(row[hit]).trim();
+            }
+            return '';
+          };
+          const findByIncludes = (row, must = []) => {
+            const keys = Object.keys(row || {});
+            for (const k of keys) {
+              const nk = norm(k);
+              const ok = must.every(seg => nk.includes(norm(seg)));
+              if (ok && row[k] != null && String(row[k]).trim() !== '') return String(row[k]).trim();
+            }
+            return '';
+          };
+
+          let dataRow = currentRow;
+          if (!dataRow || Object.keys(dataRow).length === 0) dataRow = excelData[0] || {};
+
+          // Inputs
+          const plantCodeEl = document.getElementById('plant_code');
+          const deptCodeEl = document.getElementById('dept_code');
+          const pocEmailEl = document.getElementById('poc_email');
+          const apprEmailEl = document.getElementById('approver_email');
+          const cbs1EmailEl = document.getElementById('cbs1_email');
+          const cbs2EmailEl = document.getElementById('cbs2_email');
+
+          // Prefill Plant Code if empty
+          if (plantCodeEl && !plantCodeEl.value) {
+            const v = dataRow.plant_code || findByCandidates(dataRow, ['Plant Code','Plant_Code','plantCode']);
+            if (v) plantCodeEl.value = v;
+          }
+          // Prefill Dept Code if empty
+          if (deptCodeEl && !deptCodeEl.value) {
+            const v = dataRow.dept_code || findByCandidates(dataRow, ['Department Code','Dept Code','Dept_Code','deptCode']);
+            if (v) deptCodeEl.value = v;
+          }
+          // Prefill POC Email if empty
+          if (pocEmailEl && !pocEmailEl.value) {
+            const v = dataRow.poc_email || findByCandidates(dataRow, ['POC Email','POC Email ID','POCEmail']);
+            if (v) pocEmailEl.value = v;
+          }
+          // Prefill Approver Email if empty
+          if (apprEmailEl && !apprEmailEl.value) {
+            const v = dataRow.approver_email 
+              || findByCandidates(dataRow, ['Approver Email ID','Approver Email','ApproverEmail','Approver_Email','ApproverEmailID'])
+              || findByIncludes(dataRow, ['approver','mail']);
+            if (v) apprEmailEl.value = v;
+          }
+          // Prefill CBS1 Email if empty
+          if (cbs1EmailEl && !cbs1EmailEl.value) {
+            const v = dataRow.cbs1_email 
+              || findByCandidates(dataRow, ['CBS Member1 Email ID','CBS Member 1 Email Id','CBS1 Email','CBS1Email','CBS1EmailID','CBS1_Email'])
+              || findByIncludes(dataRow, ['cbs1','mail']) || findByIncludes(dataRow, ['member1','mail']);
+            if (v) cbs1EmailEl.value = v;
+          }
+          // Prefill CBS2 Email if empty
+          if (cbs2EmailEl && !cbs2EmailEl.value) {
+            const v = dataRow.cbs2_email 
+              || findByCandidates(dataRow, ['CBS Member2 Email ID','CBS Member 2 Email Id','CBS2 Email','CBS2Email','CBS2EmailID','CBS2_Email'])
+              || findByIncludes(dataRow, ['cbs2','mail']) || findByIncludes(dataRow, ['member2','mail']);
+            if (v) cbs2EmailEl.value = v;
+          }
+        } catch (e) {
+          console.warn('Prefill from Excel on load failed:', e);
+        }
+      })();
+
+      // Function to load all data including plant_code, dept_code, and poc_email
+      async function loadAllData() {
+        try {
+          const excelData = JSON.parse(sessionStorage.getItem('excelData')) || [];
+          const currentRow = JSON.parse(sessionStorage.getItem('currentHierarchyRow')) || {};
+          
+          if (excelData.length === 0 && !currentRow.plant_code) {
+            showToast('No Excel data available to load', 'info');
+            return;
+          }
+
+          // Use current row if available, otherwise find matching row from excelData
+          let dataRow = currentRow;
+          if (!dataRow.plant_code && excelData.length > 0) {
+            // Try to find a row with the current plant_code, dept_code, or poc_email
+            const currentPlantCode = document.getElementById('plant_code').value;
+            const currentDeptCode = document.getElementById('dept_code').value;
+            const currentEmail = document.getElementById('poc_email').value;
+            
+            dataRow = excelData.find(row => 
+              (currentPlantCode && row.plant_code === currentPlantCode) ||
+              (currentDeptCode && row.dept_code === currentDeptCode) ||
+              (currentEmail && row.poc_email === currentEmail)
+            ) || excelData[0]; // fallback to first row
+          }
+
+          if (!dataRow) {
+            showToast('No matching data found', 'info');
+            return;
+          }
+
+          // Helpers to match columns flexibly (case/spacing/underscore insensitive)
+          const norm = (s) => String(s || '').toLowerCase().replace(/\s+|_/g, '');
+          const findByCandidates = (row, candidates = []) => {
+            const keys = Object.keys(row || {});
+            // exact normalized match first
+            for (const cand of candidates) {
+              const nc = norm(cand);
+              const hit = keys.find(k => norm(k) === nc);
+              if (hit && row[hit] != null && String(row[hit]).trim() !== '') return row[hit];
+            }
+            return undefined;
+          };
+          const findByIncludes = (row, mustContain = []) => {
+            const keys = Object.keys(row || {});
+            for (const k of keys) {
+              const nk = norm(k);
+              const ok = mustContain.every(seg => nk.includes(norm(seg)));
+              if (ok && row[k] != null && String(row[k]).trim() !== '') return row[k];
+            }
+            return undefined;
+          };
+
+          // Populate all fields from the data row with flexible column matching
+          const fieldMappings = {
+            // Basic fields
+            'plant_code': dataRow.plant_code || dataRow['Plant Code'] || dataRow['Plant_Code'] || dataRow['plantCode'],
+            'dept_code': dataRow.dept_code || dataRow['Department Code'] || dataRow['Dept Code'] || dataRow['Dept_Code'] || dataRow['deptCode'],
+            'poc_email': dataRow.poc_email || dataRow['POC Email'] || dataRow['POC Email ID'] || dataRow['POCEmail'],
+            'plant_name': dataRow.plant_name || dataRow['Plant Name'] || dataRow['Plant_Name'] || dataRow['plantName'],
+            'dept_name': dataRow.dept_name || dataRow['Department Name'] || dataRow['Dept Name'] || dataRow['Dept_Name'] || dataRow['deptName'],
+            
+            // POC details
+            'poc_emp_code': dataRow.poc_emp_code || dataRow['POC Employee Code'] || dataRow['POC EMP Code'] || dataRow['POCEmpCode'],
+            
+            // Approver details - try multiple possible column names
+            'approver_email': (
+              dataRow['Approver Email ID'] || dataRow['Approver Email'] || dataRow['ApproverEmail'] || dataRow.approver_email ||
+              findByCandidates(dataRow, ['Approver Email Id','ApproverEmailID','Approver_Email']) ||
+              findByIncludes(dataRow, ['approver','mail'])
+            ),
+            'approver_emp_code': dataRow['Approver EMP Code'] || dataRow['Approver Employee Code'] || dataRow['ApproverEmpCode'] || dataRow.approver_emp_code,
+            
+            // CBS1 details
+            'cbs1_email': (
+              dataRow['CBS Member1 Email ID'] || dataRow['CBS1 Email'] || dataRow['CBS1Email'] || dataRow.cbs1_email ||
+              findByCandidates(dataRow, ['CBS Member1 Email Id','CBS Member 1 Email Id','CBS1EmailID','CBS1_Email']) ||
+              findByIncludes(dataRow, ['cbs1','mail']) || findByIncludes(dataRow, ['member1','mail'])
+            ),
+            'cbs1_login_name': dataRow['CBS Member1 Login ID'] || dataRow['CBS Member1 Name'] || dataRow['CBS1 Login Name'] || dataRow['CBS1 Name'] || dataRow.cbs1_login_name,
+            'cbs1_emp_code': dataRow['CBS Member1 EMP Code'] || dataRow['CBS1 Employee Code'] || dataRow['CBS1EmpCode'] || dataRow.cbs1_emp_code,
+            
+            // CBS2 details
+            'cbs2_email': (
+              dataRow['CBS Member2 Email ID'] || dataRow['CBS2 Email'] || dataRow['CBS2Email'] || dataRow.cbs2_email ||
+              findByCandidates(dataRow, ['CBS Member2 Email Id','CBS Member 2 Email Id','CBS2EmailID','CBS2_Email']) ||
+              findByIncludes(dataRow, ['cbs2','mail']) || findByIncludes(dataRow, ['member2','mail'])
+            ),
+            'cbs2_login_name': dataRow['CBS Member2 Login ID'] || dataRow['CBS Member2 Name'] || dataRow['CBS2 Login Name'] || dataRow['CBS2 Name'] || dataRow.cbs2_login_name,
+            'cbs2_emp_code': dataRow['CBS Member2 EMP Code'] || dataRow['CBS2 Employee Code'] || dataRow['CBS2EmpCode'] || dataRow.cbs2_emp_code
+          };
+
+          // Apply all mappings
+          console.log('--- Field Mapping Results ---');
+          Object.entries(fieldMappings).forEach(([fieldId, value]) => {
+            const element = document.getElementById(fieldId);
+            console.log(`Field: ${fieldId}, Value: ${value}, Element exists: ${!!element}, Will fill: ${!!(element && value)}`);
+            if (element && value) {
+              element.value = value;
+              console.log(`✓ Loaded ${fieldId}:`, value);
+            } else if (!element) {
+              console.log(`✗ Element not found for: ${fieldId}`);
+            } else if (!value) {
+              console.log(`✗ No value for: ${fieldId}`);
+            }
+          });
+
+          // After mapping codes, fetch names from backend if missing or empty
+          const plantCodeEl = document.getElementById('plant_code');
+          const plantNameEl = document.getElementById('plant_name');
+          const deptCodeEl = document.getElementById('dept_code');
+          const deptNameEl = document.getElementById('dept_name');
+
+          const plantCodeVal = (plantCodeEl?.value || '').trim();
+          const deptCodeVal = (deptCodeEl?.value || '').trim();
+
+          // Fetch plant name from backend if we have a plant code
+          if (plantCodeVal && plantNameEl) {
+            try {
+              const p = await fetchPlantName(plantCodeVal);
+              if (p) {
+                plantNameEl.value = p;
+                console.log('✓ Fetched plant_name from backend:', p);
+              }
+            } catch (e) {
+              console.warn('Could not fetch plant_name for', plantCodeVal, e);
+            }
+          }
+
+          // Fetch department name from backend if we have a dept code
+          if (deptCodeVal && deptNameEl) {
+            try {
+              const d = await fetchDepartmentName(deptCodeVal);
+              if (d) {
+                deptNameEl.value = d;
+                console.log('✓ Fetched dept_name from backend:', d);
+              }
+            } catch (e) {
+              console.warn('Could not fetch dept_name for', deptCodeVal, e);
+            }
+          }
+
+          // Clear any Excel-provided login names to ensure DB is the single source of truth
+          ['poc_login_name','approver_login_name','cbs1_login_name','cbs2_login_name'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = '';
+          });
+
+          // After emails are in place, fetch and fill login names
+          await fillLoginNameFromEmail('poc_email', 'poc_login_name');
+          await fillLoginNameFromEmail('approver_email', 'approver_login_name');
+          await fillLoginNameFromEmail('cbs1_email', 'cbs1_login_name');
+          await fillLoginNameFromEmail('cbs2_email', 'cbs2_login_name');
+          
+          // Log all available data in the row
+          console.log('--- Available Excel Data Columns ---');
+          Object.keys(dataRow).forEach(key => {
+            console.log(`Column "${key}": "${dataRow[key]}"`);
+          });
+
+          showToast('All data loaded successfully!', 'success');
+        } catch (error) {
+          console.error('Error loading data:', error);
+          showToast('Error loading data: ' + error.message, 'danger');
+        }
+      }
+
+      // Load Data button functionality
+      const loadDataBtn = document.getElementById('loadDataBtn');
+      if (loadDataBtn) {
+        loadDataBtn.addEventListener('click', loadAllData);
+        console.log('Load Data button event listener attached successfully');
+      } else {
+        console.error('Load Data button not found!');
+      }
+
+      // Form submission
+      const form = document.getElementById('hierarchyForm');
+      form.addEventListener('submit', handleFormSubmit);
+    });
+
+    function setupFabMode() {
+      document.title = 'FAB Hierarchy Insert – ExcelFlow';
+      const header = document.querySelector('.card-header h3');
+      if (header) header.innerHTML = '<i class="bi bi-diagram-3"></i> FAB Hierarchy Insert';
+
+      // Remove FAT-oriented grouped sections completely to avoid duplicate IDs in FAB mode.
+      document.querySelectorAll('#hierarchyForm .row.mb-4').forEach(row => row.remove());
+
+      const form = document.getElementById('hierarchyForm');
+      const actions = form.querySelector('.d-flex.justify-content-between.mt-4.pt-3.border-top');
+      const fabFields = document.createElement('div');
+      fabFields.id = 'fabFields';
+      fabFields.innerHTML = `
+        <div class="row mb-4">
+          <div class="col-12 mb-3"><h5 class="border-bottom pb-2 mb-3">Section 1 — Location</h5></div>
+          <div class="col-md-4 mb-3"><label class="form-label required">plant_code</label><input class="form-control" id="plant_code" required></div>
+          <div class="col-md-4 mb-3"><label class="form-label">dept_id</label><input class="form-control" id="dept_id" type="number"></div>
+          <div class="col-md-4 mb-3"><label class="form-label required">department_code</label><input class="form-control" id="department_code" required></div>
+        </div>
+        <div class="row mb-4">
+          <div class="col-12 mb-3"><h5 class="border-bottom pb-2 mb-3">Section 2 — Role Assignments</h5></div>
+          <div class="col-md-6 mb-3"><label class="form-label">initiator_id</label><input class="form-control" id="initiator_id"></div>
+          <div class="col-md-6 mb-3"><label class="form-label">initiator_mailid</label><input class="form-control" id="initiator_mailid"></div>
+          <div class="col-md-4 mb-3"><label class="form-label">reviewer_id</label><input class="form-control" id="reviewer_id"></div>
+          <div class="col-md-4 mb-3"><label class="form-label">reviewer</label><input class="form-control" id="reviewer"></div>
+          <div class="col-md-4 mb-3"><label class="form-label">reviewer_mailid</label><input class="form-control" id="reviewer_mailid"></div>
+          <div class="col-md-6 mb-3"><label class="form-label">cbs_ga_id</label><input class="form-control" id="cbs_ga_id"></div>
+          <div class="col-md-6 mb-3"><label class="form-label">cbs_ga_mailid</label><input class="form-control" id="cbs_ga_mailid"></div>
+          <div class="col-md-6 mb-3"><label class="form-label">bussiness_partner1</label><input class="form-control" id="bussiness_partner1"></div>
+          <div class="col-md-6 mb-3"><label class="form-label">bussiness_partner_1_emailid</label><input class="form-control" id="bussiness_partner_1_emailid"></div>
+          <div class="col-md-6 mb-3"><label class="form-label">level1_approver</label><input class="form-control" id="level1_approver"></div>
+          <div class="col-md-6 mb-3"><label class="form-label">level1_approver_emailid</label><input class="form-control" id="level1_approver_emailid"></div>
+          <div class="col-md-6 mb-3"><label class="form-label">bussiness_partner2</label><input class="form-control" id="bussiness_partner2"></div>
+          <div class="col-md-6 mb-3"><label class="form-label">bussiness_partner_2_emailid</label><input class="form-control" id="bussiness_partner_2_emailid"></div>
+          <div class="col-md-6 mb-3"><label class="form-label">level2_approver</label><input class="form-control" id="level2_approver"></div>
+          <div class="col-md-6 mb-3"><label class="form-label">level2_approver_emailid</label><input class="form-control" id="level2_approver_emailid"></div>
+        </div>
+        <div class="row mb-4">
+          <div class="col-12 mb-3"><h5 class="border-bottom pb-2 mb-3">Section 3 — Status & Audit</h5></div>
+          <div class="col-md-4 mb-3"><label class="form-label">status_id</label><input class="form-control" id="status_id_fab" type="number" value="1"></div>
+          <div class="col-md-4 mb-3"><label class="form-label">created_by</label><input class="form-control" id="created_by_fab" type="number" value="2" readonly></div>
+          <div class="col-md-4 mb-3"><label class="form-label">created_date</label><input class="form-control" id="created_date_fab" readonly></div>
+          <div class="col-md-6 mb-3"><label class="form-label">updated_by</label><input class="form-control" id="updated_by_fab" readonly></div>
+          <div class="col-md-6 mb-3"><label class="form-label">updated_date</label><input class="form-control" id="updated_date_fab" readonly></div>
+        </div>
+      `;
+      form.insertBefore(fabFields, actions);
+
+      const now = new Date().toISOString().replace('T', ' ').slice(0, 19);
+      const createdDateEl = document.getElementById('created_date_fab');
+      if (createdDateEl) createdDateEl.value = now;
+    }
+
+    function fillFieldsFromUrlParams(urlParams) {
+      const FAB_PARAM_MAP = {
+        'plant_code': 'plant_code',
+        'department_code': 'department_code',
+        'initiator_mailid': 'initiator_mailid',
+        'reviewer_mailid': 'reviewer_mailid',
+        'cbs_ga_mailid': 'cbs_ga_mailid',
+        'bussiness_partner_1_emailid': 'bussiness_partner_1_emailid',
+        'level1_approver_emailid': 'level1_approver_emailid',
+        'bussiness_partner_2_emailid': 'bussiness_partner_2_emailid',
+        'level2_approver_emailid': 'level2_approver_emailid'
+      };
+
+      const currentRow = (() => {
+        try {
+          const row = JSON.parse(sessionStorage.getItem('currentHierarchyRow') || '{}');
+          if (row && Object.keys(row).length) return row;
+          const excel = JSON.parse(sessionStorage.getItem('excelData') || '[]');
+          return Array.isArray(excel) && excel.length ? excel[0] : {};
+        } catch (_) {
+          return {};
+        }
+      })();
+
+      const fallbackByField = {
+        plant_code: currentRow.plant_code || currentRow['Plant Code'] || currentRow['plantCode'] || '',
+        department_code: currentRow.department_code || currentRow.dept_code || currentRow['Department Code'] || currentRow['departmentCode'] || '',
+        initiator_mailid: currentRow.initiator_mailid || currentRow.initiator || currentRow['User Department'] || '',
+        reviewer_mailid: currentRow.reviewer_mailid || currentRow.reviewer || currentRow['Reviewer'] || '',
+        cbs_ga_mailid: currentRow.cbs_ga_mailid || currentRow['CBS GA'] || '',
+        bussiness_partner_1_emailid: currentRow.bussiness_partner_1_emailid || currentRow['Business Partner'] || '',
+        level1_approver_emailid: currentRow.level1_approver_emailid || currentRow['Approver as per DoA'] || '',
+        bussiness_partner_2_emailid: currentRow.bussiness_partner_2_emailid || currentRow['__EMPTY_16'] || '',
+        level2_approver_emailid: currentRow.level2_approver_emailid || currentRow['__EMPTY_23'] || ''
+      };
+
+      for (const [param, fieldId] of Object.entries(FAB_PARAM_MAP)) {
+        const val = (urlParams.get(param) || fallbackByField[fieldId] || '').trim();
+        const el = document.getElementById(fieldId);
+        if (el && val) {
+          el.value = val;
+          console.log(`✓ Filled ${fieldId} =`, val);
+        } else {
+          console.warn(`✗ Could not fill ${fieldId}; param=${param}, value="${val}"`);
+        }
+      }
+    }
+
+    async function fillUserFieldsByEmail() {
+      const EMAIL_TO_ID_MAP = [
+        ['initiator_mailid', 'initiator_id', false],
+        ['reviewer_mailid', 'reviewer_id', false],
+        ['reviewer_mailid', 'reviewer', true],
+        ['cbs_ga_mailid', 'cbs_ga_id', false],
+        ['bussiness_partner_1_emailid', 'bussiness_partner1', false],
+        ['level1_approver_emailid', 'level1_approver', false],
+        ['bussiness_partner_2_emailid', 'bussiness_partner2', false],
+        ['level2_approver_emailid', 'level2_approver', false]
+      ];
+
+      const emailCache = {};
+      const splitEmails = (raw) => String(raw || '')
+        .split(',')
+        .map(value => value.trim())
+        .filter(Boolean);
+      const fetchLookup = async (email, useFullName) => {
+        const primary = useFullName
+          ? `${API_BASE}/api/users/full-name?email=${encodeURIComponent(email)}`
+          : `${API_BASE}/api/users/by-email?email=${encodeURIComponent(email)}`;
+        const fallback = useFullName
+          ? `${API_BASE}/api/user/${encodeURIComponent(email)}`
+          : `${API_BASE}/api/hierarchy/user/login-name?email=${encodeURIComponent(email)}`;
+        const key = `${useFullName ? 'full' : 'login'}::${email}`;
+        if (emailCache[key]) return emailCache[key];
+
+        let data = {};
+        try {
+          const res = await fetch(primary);
+          if (res.ok) {
+            data = await res.json().catch(() => ({}));
+            emailCache[key] = data || {};
+            return emailCache[key];
+          }
+        } catch (_) {}
+
+        try {
+          const res = await fetch(fallback);
+          if (res.ok) {
+            data = await res.json().catch(() => ({}));
+            emailCache[key] = data || {};
+            return emailCache[key];
+          }
+        } catch (_) {}
+
+        emailCache[key] = {};
+        return emailCache[key];
+      };
+
+      const getLookupValue = (data, useFullName) => {
+        if (useFullName) {
+          if (data.fullName) return String(data.fullName).trim();
+          const firstName = String(data.first_name || '').trim();
+          const lastName = String(data.last_name || '').trim();
+          return `${firstName} ${lastName}`.trim();
+        }
+        return String(data.loginName || data.login_name || '').trim();
+      };
+
+      for (const [emailFieldId, idFieldId, useFullName] of EMAIL_TO_ID_MAP) {
+        const emailEl = document.getElementById(emailFieldId);
+        const idEl = document.getElementById(idFieldId);
+        if (!emailEl || !idEl || !emailEl.value) continue;
+
+        const emails = splitEmails(emailEl.value);
+        if (!emails.length) continue;
+        try {
+          const values = [];
+          for (const email of emails) {
+            const data = await fetchLookup(email, useFullName);
+            const value = getLookupValue(data, useFullName);
+            if (value) values.push(value);
+          }
+          idEl.value = values.join(', ');
+          if (idEl.value) {
+            console.log(`✓ Auto-filled ${idFieldId} =`, idEl.value);
+          } else {
+            console.warn(`✗ Lookup returned empty for ${idFieldId} (${emails.join(', ')})`);
+          }
+        } catch (err) {
+          console.warn(`✗ Could not lookup ${idFieldId} for email ${emails.join(', ')}:`, err);
+        }
+      }
+    }
+
+    async function fillDeptIdByDepartmentCode() {
+      const deptCodeEl = document.getElementById('department_code');
+      const deptIdEl = document.getElementById('dept_id');
+      if (!deptCodeEl || !deptIdEl) return;
+      const departmentCode = (deptCodeEl.value || '').trim();
+      if (!departmentCode) return;
+      try {
+        const res = await fetch(`${API_BASE}/api/fab/hierarchy/department-id?departmentCode=${encodeURIComponent(departmentCode)}`);
+        if (!res.ok) {
+          console.warn(`✗ dept_id lookup failed: HTTP ${res.status}`);
+          return;
+        }
+        const data = await res.json().catch(() => ({}));
+        if (data && data.deptId != null && data.deptId !== '') {
+          deptIdEl.value = String(data.deptId);
+          console.log(`✓ Auto-filled dept_id =`, deptIdEl.value);
+        } else {
+          console.warn(`✗ dept_id not found for department_code ${departmentCode}`);
+        }
+      } catch (err) {
+        console.warn(`✗ Could not lookup dept_id for department_code ${departmentCode}:`, err);
+      }
+    }
+
+    // Handle form submission
+    async function handleFormSubmit(e) {
+      e.preventDefault();
+      
+      const form = e.target;
+      if (!form.checkValidity()) {
+        e.stopPropagation();
+        form.classList.add('was-validated');
+        return;
+      }
+
+      const formData = new FormData(form);
+      const data = Object.fromEntries(formData.entries());
+
+      if (currentModule === 'FAB') {
+        const payload = {
+          plantCode: (document.getElementById('plant_code')?.value || '').trim(),
+          deptId: (() => {
+            const raw = (document.getElementById('dept_id')?.value || '').trim();
+            return raw ? parseInt(raw, 10) : null;
+          })(),
+          departmentCode: (document.getElementById('department_code')?.value || '').trim(),
+          initiatorId: (document.getElementById('initiator_id')?.value || '').trim(),
+          initiatorMailid: (document.getElementById('initiator_mailid')?.value || '').trim(),
+          reviewerId: (document.getElementById('reviewer_id')?.value || '').trim(),
+          reviewer: (document.getElementById('reviewer')?.value || '').trim(),
+          reviewerMailid: (document.getElementById('reviewer_mailid')?.value || '').trim(),
+          cbsGaId: (document.getElementById('cbs_ga_id')?.value || '').trim(),
+          cbsGaMailid: (document.getElementById('cbs_ga_mailid')?.value || '').trim(),
+          bussinessPartner1: (document.getElementById('bussiness_partner1')?.value || '').trim(),
+          bussinessPartner1Emailid: (document.getElementById('bussiness_partner_1_emailid')?.value || '').trim(),
+          level1Approver: (document.getElementById('level1_approver')?.value || '').trim(),
+          level1ApproverEmailid: (document.getElementById('level1_approver_emailid')?.value || '').trim(),
+          bussinessPartner2: (document.getElementById('bussiness_partner2')?.value || '').trim(),
+          bussinessPartner2Emailid: (document.getElementById('bussiness_partner_2_emailid')?.value || '').trim(),
+          level2Approver: (document.getElementById('level2_approver')?.value || '').trim(),
+          level2ApproverEmailid: (document.getElementById('level2_approver_emailid')?.value || '').trim(),
+          statusId: (() => {
+            const raw = (document.getElementById('status_id_fab')?.value || '').trim();
+            return raw ? parseInt(raw, 10) : 1;
+          })(),
+          createdBy: (() => {
+            const raw = (document.getElementById('created_by_fab')?.value || '').trim();
+            return raw ? parseInt(raw, 10) : 2;
+          })()
+        };
+        if (!payload.plantCode || !payload.departmentCode) {
+          showToast('plant_code and department_code are required', 'danger');
+          return;
+        }
+        try {
+          const response = await fetch(`${API_BASE}/api/fab/hierarchy/recipient/insert`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          const result = await response.json().catch(() => ({}));
+          if (!response.ok) {
+            throw new Error(result.message || `HTTP ${response.status}`);
+          }
+          showToast('FAB hierarchy recipient added successfully!', 'success');
+          setTimeout(() => { window.location.href = 'index.html?module=FAB'; }, 1200);
+        } catch (error) {
+          showToast(error.message || 'FAB insert failed', 'danger');
+        }
+        return;
+      }
+      
+      // FAT insert expects numeric-converted codes; FAB keeps raw values for flexible table columns.
+      if (currentModule !== 'FAB') {
+        const numericFields = ['plant_code', 'poc_emp_code', 'approver_emp_code', 'cbs1_emp_code', 'cbs2_emp_code'];
+        numericFields.forEach(field => {
+          if (data[field]) {
+            data[field] = parseInt(data[field], 10) || 0;
+          }
+        });
+
+        if (data.dept_code) {
+          data.dept_code = parseInt(data.dept_code.replace(/^D/i, ''), 10) || 0;
+        }
+      }
+      
+      try {
+        const endpoint = currentModule === 'FAB'
+          ? `${API_BASE}/api/fab/hierarchy/recipient/insert`
+          : `${API_BASE}/api/hierarchy/recipient/insert`;
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+        
+        if (result.success) {
+          showToast('Hierarchy recipient added successfully!', 'success');
+          // Redirect back to main page after a short delay
+          setTimeout(() => {
+            window.location.href = 'index.html';
+          }, 1500);
+        } else {
+          throw new Error(result.message || 'Failed to add hierarchy recipient');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        showToast(error.message || 'An error occurred while saving', 'danger');
+      }
+    }
+
+    // Show toast notification
+    function showToast(message, type = 'success') {
+      const toastEl = document.getElementById('toast');
+      const toastMessage = document.getElementById('toast-message');
+      
+      // Set message and style based on type
+      toastMessage.textContent = message;
+      
+      // Remove all color classes and add the correct one
+      toastEl.classList.remove('bg-success', 'bg-danger', 'bg-info');
+      
+      if (type === 'danger') {
+        toastEl.classList.add('bg-danger');
+      } else if (type === 'info') {
+        toastEl.classList.add('bg-info');
+      } else {
+        toastEl.classList.add('bg-success');
+      }
+      
+      // Show the toast
+      const toast = new bootstrap.Toast(toastEl);
+      toast.show();
+    }
+
+    // Backend helpers: fetch plant and department names by code
+    async function fetchPlantName(plantCode) {
+      // Use hierarchy endpoints
+      const urlCandidates = [
+        `${API_BASE}/api/hierarchy/plant/${encodeURIComponent(plantCode)}`
+      ];
+      for (const url of urlCandidates) {
+        try {
+          const res = await fetch(url);
+          if (!res.ok) continue;
+          const data = await res.json().catch(() => ({}));
+          // Accept common shapes: {plant_name}, {name}, nested {data: {plant_name}}
+          return (
+            data.plant_name || data.name || (data.data && (data.data.plant_name || data.data.name)) || ''
+          );
+        } catch (_) { /* try next */ }
+      }
+      return '';
+    }
+
+    async function fetchDepartmentName(deptCode) {
+      const urlCandidates = [
+        `${API_BASE}/api/hierarchy/department/${encodeURIComponent(deptCode)}`
+      ];
+      for (const url of urlCandidates) {
+        try {
+          const res = await fetch(url);
+          if (!res.ok) continue;
+          const data = await res.json().catch(() => ({}));
+          return (
+            data.department_name || data.dept_name || data.name || (data.data && (data.data.department_name || data.data.dept_name || data.data.name)) || ''
+          );
+        } catch (_) { /* try next */ }
+      }
+      return '';
+    }
+
+    // Backend helper: fetch login_name by email
+    async function fetchLoginNameByEmail(email) {
+      if (!email) return '';
+      const url = `${API_BASE}/api/hierarchy/user/login-name?email=${encodeURIComponent(email)}`;
+      try {
+        const res = await fetch(url);
+        if (!res.ok) return '';
+        const data = await res.json().catch(() => ({}));
+        return data.login_name || '';
+      } catch (_) { return ''; }
+    }
+
+    // Fill a login-name input from a paired email input if login is empty
+    async function fillLoginNameFromEmail(emailInputId, loginInputId) {
+      const emailEl = document.getElementById(emailInputId);
+      const loginEl = document.getElementById(loginInputId);
+      if (!emailEl || !loginEl) return;
+      const emailVal = (emailEl.value || '').trim();
+      const hasLogin = (loginEl.value || '').trim() !== '';
+      if (!emailVal || hasLogin) return;
+      const ln = await fetchLoginNameByEmail(emailVal);
+      if (ln) loginEl.value = ln;
+    }
+  </script>
+</body>
+</html>

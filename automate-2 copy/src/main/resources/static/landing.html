@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workflow Automation Portal</title>
+  <!-- Google Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" />
+  <!-- App Styles -->
+  <link rel="stylesheet" href="./css/styles.css" />
+  <style>
+    body {
+      background: linear-gradient(135deg, var(--primary-light), var(--bg-secondary));
+      min-height: 100vh;
+    }
+
+    .header {
+      background: linear-gradient(135deg, var(--primary), #6b2510);
+      color: white;
+      padding: var(--space-8) var(--space-6);
+      text-align: center;
+      border-bottom: 3px solid var(--primary-hover);
+      box-shadow: var(--box-shadow-lg);
+    }
+
+    .header h1 {
+      color: white;
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: var(--space-2);
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .header p {
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 1.1rem;
+      margin: 0;
+      font-weight: 500;
+    }
+
+    .container {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-8) var(--space-6);
+    }
+
+    .tiles-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: var(--space-8);
+      max-width: 1200px;
+      width: 100%;
+    }
+
+    .tile {
+      background: var(--bg-primary);
+      border-radius: var(--border-radius-lg);
+      padding: var(--space-8);
+      text-align: center;
+      text-decoration: none;
+      color: var(--text-primary);
+      transition: var(--transition);
+      box-shadow: var(--box-shadow);
+      border: 2px solid var(--border-color);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .tile::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 5px;
+      background: linear-gradient(90deg, var(--primary), #6b2510);
+      transition: height var(--transition);
+    }
+
+    .tile:hover {
+      transform: translateY(-8px);
+      box-shadow: var(--box-shadow-lg);
+      border-color: var(--primary);
+      background: var(--bg-secondary);
+    }
+
+    .tile:hover::before {
+      height: 100%;
+      opacity: 0.05;
+    }
+
+    .tile-icon {
+      font-size: 3.5rem;
+      margin-bottom: var(--space-4);
+      color: var(--primary);
+      transition: var(--transition);
+    }
+
+    .tile:hover .tile-icon {
+      color: var(--primary-hover);
+      transform: scale(1.1);
+    }
+
+    .tile-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: var(--space-2);
+      color: var(--text-primary);
+      transition: var(--transition);
+    }
+
+    .tile-description {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      line-height: 1.6;
+      transition: var(--transition);
+    }
+
+    .tile:hover .tile-title {
+      color: var(--primary);
+    }
+
+    .tile:hover .tile-description {
+      color: var(--text-primary);
+    }
+
+    .footer {
+      background: var(--bg-secondary);
+      padding: var(--space-4);
+      text-align: center;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border-color);
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 768px) {
+      .tiles-grid {
+        grid-template-columns: 1fr;
+        gap: var(--space-6);
+      }
+      
+      .header h1 {
+        font-size: 2rem;
+      }
+      
+      .tile {
+        padding: var(--space-6);
+      }
+      
+      .container {
+        padding: var(--space-6) var(--space-4);
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <h1>Workflow Automation Portal</h1>
+    <p>Select a workflow module to continue</p>
+  </header>
+
+  <main class="container">
+    <div class="tiles-grid">
+      <!-- FAT Tile -->
+      <a href="index.html?module=FAT" class="tile">
+        <div class="tile-icon">
+          <i class="bi bi-arrow-left-right"></i>
+        </div>
+        <h2 class="tile-title">FAT</h2>
+        <p class="tile-description">Fixed Asset Transfer - Manage asset transfer workflows and validations</p>
+      </a>
+
+      <!-- FAB Tile -->
+      <a href="index.html?module=FAB" class="tile">
+        <div class="tile-icon">
+          <i class="bi bi-cash-stack"></i>
+        </div>
+        <h2 class="tile-title">FAB</h2>
+        <p class="tile-description">Fixed Asset Budget - Asset budget management and planning</p>
+      </a>
+
+      <!-- FAD Tile -->
+      <a href="index.html?module=FAD" class="tile">
+        <div class="tile-icon">
+          <i class="bi bi-trash3"></i>
+        </div>
+        <h2 class="tile-title">FAD</h2>
+        <p class="tile-description">Fixed Asset Disposal - Asset disposal and retirement workflows</p>
+      </a>
+
+      <!-- FAP Tile -->
+      <a href="index.html?module=FAP" class="tile">
+        <div class="tile-icon">
+          <i class="bi bi-cart-plus"></i>
+        </div>
+        <h2 class="tile-title">FAP</h2>
+        <p class="tile-description">Fixed Asset Procurement - Asset acquisition and procurement</p>
+      </a>
+
+      <!-- FACAP Tile -->
+      <a href="index.html?module=FACAP" class="tile">
+        <div class="tile-icon">
+          <i class="bi bi-building-add"></i>
+        </div>
+        <h2 class="tile-title">FACAP</h2>
+        <p class="tile-description">Fixed Asset Capitalization - Asset capitalization processes</p>
+      </a>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <p>&copy; 2026 Workflow Automation Portal. Built for internal workflow automation.</p>
+  </footer>
+</body>
+</html>
