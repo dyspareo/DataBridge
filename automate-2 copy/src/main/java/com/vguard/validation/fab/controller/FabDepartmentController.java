@@ -1,5 +1,6 @@
 package com.vguard.validation.fab.controller;
 
+import lombok.extern.slf4j.Slf4j;
 import com.vguard.validation.fab.entity.WbsDepartmentMaster;
 import com.vguard.validation.fab.service.WbsDepartmentService;
 import jakarta.servlet.http.HttpSession;
@@ -14,6 +15,7 @@ import java.util.Map;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/fab/department")
+@Slf4j
 public class FabDepartmentController {
     private final WbsDepartmentService service;
 

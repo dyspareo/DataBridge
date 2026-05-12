@@ -1,5 +1,6 @@
 package com.vguard.validation.controller;
 
+import lombok.extern.slf4j.Slf4j;
 import com.vguard.validation.repository.HierarchyRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,6 +17,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/hierarchy")
+@Slf4j
 public class HierarchyController {
     private final HierarchyRepository repo;
 
@@ -45,6 +47,21 @@ public class HierarchyController {
             body.put("success", loginName != null);
         } catch (Exception ex) {
             body.put("login_name", null);
+            body.put("success", false);
+        }
+        return ResponseEntity.ok(body);
+    }
+
+    @GetMapping("/user/id")
+    public ResponseEntity<?> getUserIdByEmail(@RequestParam("email") String email) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("email", email);
+        try {
+            Long id = repo.findUserIdByEmail(email);
+            body.put("id", id);
+            body.put("success", id != null);
+        } catch (Exception ex) {
+            body.put("id", null);
             body.put("success", false);
         }
         return ResponseEntity.ok(body);

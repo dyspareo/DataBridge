@@ -1,78 +1,61 @@
 package com.vguard.validation.service;
 
-import com.vguard.validation.model.*;
-import com.vguard.validation.repository.DepartmentRepository;
+import lombok.extern.slf4j.Slf4j;
+import com.vguard.validation.model.ValidationRequest;
+import com.vguard.validation.model.ValidationResponse;
 import com.vguard.validation.repository.PlantRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataAccessException;
+import com.vguard.validation.repository.DepartmentRepository;
+import com.vguard.validation.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
-import java.util.concurrent.CompletableFuture;
-
 @Service
+@Slf4j
 public class ValidationService {
 
-    @Autowired
-    private PlantRepository plantRepo;
-    
-    @Autowired
-    private DepartmentRepository deptRepo;
+    private final PlantRepository plantRepository;
+    private final DepartmentRepository departmentRepository;
+    private final UserRepository userRepository;
+
+    public ValidationService(PlantRepository plantRepository, 
+                           DepartmentRepository departmentRepository,
+                           UserRepository userRepository) {
+        this.plantRepository = plantRepository;
+        this.departmentRepository = departmentRepository;
+        this.userRepository = userRepository;
+    }
 
     public ValidationResponse validateAsync(ValidationRequest request) {
-        CompletableFuture<ValidationResult> plantFuture =
-                CompletableFuture.supplyAsync(() -> validatePlant(request.getPlantCode()));
-        CompletableFuture<ValidationResult> deptFuture =
-                CompletableFuture.supplyAsync(() -> validateDepartment(request.getDepartmentCode()));
-
-        CompletableFuture.allOf(plantFuture, deptFuture).join();
-
         ValidationResponse response = new ValidationResponse();
-        try {
-            ValidationResult plant = plantFuture.get();
-            ValidationResult dept = deptFuture.get();
-
-            response.setPlantCode(plant.getCode());
-            response.setPlantStatus(plant.getStatus());
-            response.setPlantMessage(plant.getMessage());
-
-            response.setDepartmentCode(dept.getCode());
-            response.setDepartmentStatus(dept.getStatus());
-            response.setDepartmentMessage(dept.getMessage());
-        } catch (Exception e) {
-            response.setPlantStatus("Error");
-            response.setDepartmentStatus("Error");
-            response.setPlantMessage(e.getMessage());
+        
+        // Set request codes
+        response.setPlantCode(request.getPlantCode());
+        response.setDepartmentCode(request.getDepartmentCode());
+        
+        // Validate plant code
+        if (request.getPlantCode() != null && !request.getPlantCode().trim().isEmpty()) {
+            int plantCount = plantRepository.countInMasterByCodeOrPlantCode(request.getPlantCode());
+            response.setPlantStatus(plantCount > 0 ? "Existing" : "Not Existing");
+            response.setPlantMessage(plantCount > 0 ? "Record found" : "Plant not found");
+        } else {
+            response.setPlantStatus("Not Existing");
+            response.setPlantMessage("Plant code required");
         }
+        
+        // Validate department code
+        if (request.getDepartmentCode() != null && !request.getDepartmentCode().trim().isEmpty()) {
+            // Add 'D' prefix if not already present for validation
+            String deptCode = request.getDepartmentCode().trim();
+            if (!deptCode.toUpperCase().startsWith("D")) {
+                deptCode = 'D' + deptCode;
+            }
+            int deptCount = departmentRepository.countInMasterByDepartmentCode(deptCode);
+            response.setDepartmentStatus(deptCount > 0 ? "Existing" : "Not Existing");
+            response.setDepartmentMessage(deptCount > 0 ? "Record found" : "Department not found");
+        } else {
+            response.setDepartmentStatus("Not Existing");
+            response.setDepartmentMessage("Department code required");
+        }
+        
         return response;
-    }
-
-    private ValidationResult validatePlant(String code) {
-        if (code == null || code.isBlank())
-            return new ValidationResult("Not Existing", "Empty Plant Code", null);
-        try {
-            int count = plantRepo.countInMasterByPlantCode(code);
-            if (count > 0)
-                return new ValidationResult("Existing", "-", code);
-            return new ValidationResult("Not Existing", "Plant not found", code);
-        } catch (DataAccessException ex) {
-            return new ValidationResult("Error", "DB error while checking plant: " + ex.getMostSpecificCause().getMessage(), code);
-        }
-    }
-
-    private ValidationResult validateDepartment(String code) {
-        if (code == null || code.isBlank())
-            return new ValidationResult("Not Existing", "Empty Department Code", null);
-        String normalized = code.trim();
-        if (!normalized.toUpperCase().startsWith("D")) {
-            normalized = "D" + normalized;
-        }
-        try {
-            int count = deptRepo.countInMasterByDepartmentCode(normalized);
-            if (count > 0)
-                return new ValidationResult("Existing", "-", normalized);
-            return new ValidationResult("Not Existing", "Department not found", normalized);
-        } catch (DataAccessException ex) {
-            return new ValidationResult("Error", "DB error while checking department: " + ex.getMostSpecificCause().getMessage(), normalized);
-        }
     }
 }

@@ -1,5 +1,6 @@
 package com.vguard.validation.repository;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -8,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 @Repository
+@Slf4j
 public class PlantDepartmentMappingRepository {
     private final JdbcTemplate jdbc;
 
@@ -37,19 +39,24 @@ public class PlantDepartmentMappingRepository {
 
         String sql = """
                 INSERT INTO sd_apps_db.app_vg_plant_department_map 
-                  (plant_code, dept_code, status_id, app_id, wkf_process_def_id, 
+                  (plant_code, dept_code, Status_id, app_id, wkf_process_def_id, 
                    created_date, created_by, dept_id)
                 SELECT 
                   ?, 
                   ?, 
                   1,
-                  (SELECT app_id FROM app_company_application_map WHERE short_name = 'FA' LIMIT 1),
-                  (SELECT id FROM wkf_process_definition WHERE name = 'FA Procurement V2' LIMIT 1),
-                  NOW(), 
-                  2, 
-                  (SELECT id FROM app_vg_department_master WHERE Dept_Name = ? LIMIT 1)
+                  acam.app_id,
+                  wpd.id,
+                  NOW(),
+                  2,
+                  ?
+                FROM vguarddev_smartdocso_20201109134921303_1000000001911.app_company_application_map acam
+                JOIN vguarddev_smartdocso_20201109134921303_1000000001911.wkf_process_definition wpd 
+                  ON wpd.name = 'FA Procurement V2'
+                WHERE acam.name = 'FA'
+                LIMIT 1
                 """;
-        return jdbc.update(sql, safePlantCode, deptCode, departmentCodeOrName);
+        return jdbc.update(sql, safePlantCode, deptCode, deptId);
     }
 
     public Integer resolveDepartmentId(String departmentCodeOrName) {

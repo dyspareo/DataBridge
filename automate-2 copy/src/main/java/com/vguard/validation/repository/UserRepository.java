@@ -1,5 +1,6 @@
 package com.vguard.validation.repository;
 
+import lombok.extern.slf4j.Slf4j;
 import com.vguard.validation.model.UserResponse;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -9,6 +10,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import java.util.Optional;
 
 @Repository
+@Slf4j
 public class UserRepository {
     private final JdbcTemplate jdbcTemplate;
     

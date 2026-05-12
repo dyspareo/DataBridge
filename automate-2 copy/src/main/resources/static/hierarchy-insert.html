@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Add Hierarchy Recipient – ExcelFlow</title>
+  <link rel="icon" type="image/png" href="./vg-icon.png" />
   <!-- Google Font -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -384,20 +385,103 @@
         }
       })();
 
+      function requestExcelDataFromOpener(timeoutMs = 1500) {
+        return new Promise((resolve) => {
+          const targetWindow = (() => {
+            try {
+              if (window.opener && !window.opener.closed) return window.opener;
+            } catch (_) {}
+            try {
+              if (window.parent && window.parent !== window) return window.parent;
+            } catch (_) {}
+            return null;
+          })();
+
+          if (!targetWindow) return resolve(null);
+
+          let done = false;
+          const timer = setTimeout(() => {
+            if (done) return;
+            done = true;
+            window.removeEventListener('message', onMessage);
+            resolve(null);
+          }, timeoutMs);
+
+          function onMessage(event) {
+            const data = event.data || {};
+            if (!data || data.type !== 'excel-data-response') return;
+            if (event.source && event.source !== targetWindow) return;
+            done = true;
+            clearTimeout(timer);
+            window.removeEventListener('message', onMessage);
+            resolve({
+              excelData: Array.isArray(data.excelData) ? data.excelData : [],
+              currentHierarchyRow: (data.currentHierarchyRow && typeof data.currentHierarchyRow === 'object') ? data.currentHierarchyRow : {}
+            });
+          }
+
+          window.addEventListener('message', onMessage);
+          try {
+            targetWindow.postMessage({ type: 'request-excel-data' }, '*');
+          } catch (_) {
+            clearTimeout(timer);
+            window.removeEventListener('message', onMessage);
+            resolve(null);
+          }
+        });
+      }
+
+      async function ensureExcelDataAvailable() {
+        let excelData = [];
+        let currentRow = {};
+        try { excelData = JSON.parse(sessionStorage.getItem('excelData')) || []; } catch (_) {}
+        try { currentRow = JSON.parse(sessionStorage.getItem('currentHierarchyRow')) || {}; } catch (_) {}
+
+        const hasAny = (Array.isArray(excelData) && excelData.length > 0) || (currentRow && Object.keys(currentRow).length > 0);
+        if (hasAny) return { excelData, currentRow };
+
+        // Fallback: treat URL query params as a "row" when this page is opened directly (no opener + no sessionStorage).
+        // This prevents the misleading "No Excel data available" toast when values are already provided in the URL.
+        try {
+          const params = new URLSearchParams(window.location.search);
+          const candidateKeys = [
+            'plant_code','dept_code','poc_email','approver_email','cbs1_email','cbs2_email',
+            'plant_name','dept_name',
+            'poc_emp_code','approver_emp_code','cbs1_emp_code','cbs2_emp_code'
+          ];
+          const hasUsefulParams = candidateKeys.some(k => {
+            const v = params.get(k);
+            return v != null && String(v).trim() !== '';
+          });
+          if (hasUsefulParams) {
+            const urlRow = {};
+            params.forEach((value, key) => { urlRow[key] = value; });
+            return { excelData: [], currentRow: urlRow };
+          }
+        } catch (_) {}
+
+        const fromOpener = await requestExcelDataFromOpener();
+        if (!fromOpener) return { excelData: [], currentRow: {} };
+
+        try { sessionStorage.setItem('excelData', JSON.stringify(fromOpener.excelData || [])); } catch (_) {}
+        try { sessionStorage.setItem('currentHierarchyRow', JSON.stringify(fromOpener.currentHierarchyRow || {})); } catch (_) {}
+        return { excelData: fromOpener.excelData || [], currentRow: fromOpener.currentHierarchyRow || {} };
+      }
+
       // Function to load all data including plant_code, dept_code, and poc_email
       async function loadAllData() {
         try {
-          const excelData = JSON.parse(sessionStorage.getItem('excelData')) || [];
-          const currentRow = JSON.parse(sessionStorage.getItem('currentHierarchyRow')) || {};
+          const { excelData, currentRow } = await ensureExcelDataAvailable();
           
-          if (excelData.length === 0 && !currentRow.plant_code) {
+          const hasCurrentRow = !!(currentRow && typeof currentRow === 'object' && Object.keys(currentRow).length > 0);
+          if (excelData.length === 0 && !hasCurrentRow) {
             showToast('No Excel data available to load', 'info');
             return;
           }
 
           // Use current row if available, otherwise find matching row from excelData
           let dataRow = currentRow;
-          if (!dataRow.plant_code && excelData.length > 0) {
+          if ((!dataRow || Object.keys(dataRow).length === 0) && excelData.length > 0) {
             // Try to find a row with the current plant_code, dept_code, or poc_email
             const currentPlantCode = document.getElementById('plant_code').value;
             const currentDeptCode = document.getElementById('dept_code').value;
@@ -526,13 +610,7 @@
             }
           }
 
-          // Clear any Excel-provided login names to ensure DB is the single source of truth
-          ['poc_login_name','approver_login_name','cbs1_login_name','cbs2_login_name'].forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.value = '';
-          });
-
-          // After emails are in place, fetch and fill login names
+          // After emails are in place, fetch and fill login names (only if blank)
           await fillLoginNameFromEmail('poc_email', 'poc_login_name');
           await fillLoginNameFromEmail('approver_email', 'approver_login_name');
           await fillLoginNameFromEmail('cbs1_email', 'cbs1_login_name');

@@ -1,5 +1,6 @@
 package com.vguard.validation.controller;
 
+import lombok.extern.slf4j.Slf4j;
 import com.vguard.validation.repository.DepartmentUserMappingRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,6 +13,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/department")
+@Slf4j
 public class DepartmentMappingController {
     private static final Logger log = LoggerFactory.getLogger(DepartmentMappingController.class);
     private final DepartmentUserMappingRepository repo;

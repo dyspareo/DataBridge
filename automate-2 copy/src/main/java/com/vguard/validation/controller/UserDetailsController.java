@@ -1,5 +1,6 @@
 package com.vguard.validation.controller;
 
+import lombok.extern.slf4j.Slf4j;
 import com.vguard.validation.dto.UserDetailRow;
 import com.vguard.validation.repository.UserDetailsRepository;
 import com.vguard.validation.repository.UserRepository;
@@ -20,6 +21,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/user")
+@Slf4j
 public class UserDetailsController {
 
     private static final Logger log = LoggerFactory.getLogger(UserDetailsController.class);

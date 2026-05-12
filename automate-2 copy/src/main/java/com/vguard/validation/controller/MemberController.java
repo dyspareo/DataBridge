@@ -1,5 +1,6 @@
 package com.vguard.validation.controller;
 
+import lombok.extern.slf4j.Slf4j;
 import com.vguard.validation.repository.MemberRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -10,6 +11,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/member")
+@Slf4j
 public class MemberController {
     private final MemberRepository repo;
 

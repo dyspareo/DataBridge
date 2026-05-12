@@ -10,6 +10,7 @@ import java.util.Optional;
 @Repository
 public interface FabHierarchyRepository extends JpaRepository<FabTaskAssignmentMap, Integer> {
     Optional<FabTaskAssignmentMap> findByPlantCodeAndDepartmentCode(String plantCode, String departmentCode);
+    List<FabTaskAssignmentMap> findAllByPlantCodeAndDepartmentCode(String plantCode, String departmentCode);
     List<FabTaskAssignmentMap> findByPlantCode(String plantCode);
     List<FabTaskAssignmentMap> findByDepartmentCode(String departmentCode);
 }

@@ -124,6 +124,17 @@ function ensureXLSX() {
     ? String(window.API_BASE)
     : ((location.protocol === 'file:') ? 'http://localhost:8080' : '');
 
+  function resolveStaticPageUrl(pathOrUrl) {
+    const raw = String(pathOrUrl || '').trim();
+    if (!raw) return raw;
+    // Already absolute (has a URI scheme like http:, https:, file:, about:, etc.)
+    if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(raw)) return raw;
+    if (location.protocol === 'file:' && API_BASE) {
+      return `${API_BASE}/${raw.replace(/^\//, '')}`;
+    }
+    return raw;
+  }
+
   // Simple network backoff to avoid spamming errors when backend is offline
   let _netBackoffUntil = 0;
   function inBackoff() { return Date.now() < _netBackoffUntil; }
@@ -153,7 +164,7 @@ function ensureXLSX() {
           add(r.user_login_name);
           add(r.orm_instance_name);
           add(r.process_definition_name);
-          add(r.status_id);
+          add(r.statusId ?? r.status_id ?? r.Status_id);
           add(r.created_date);
           add(r.created_by);
           tbody.appendChild(tr);
@@ -180,7 +191,7 @@ function ensureXLSX() {
         // Handle click to open new tab with pre-filled parameters
         button.addEventListener('click', () => {
           if (modal) modal.style.display = 'none';
-          window.open(`plant-mapping-insert.html?${qs.toString()}`, '_blank', 'noopener');
+          window.open(resolveStaticPageUrl(`plant-mapping-insert.html?${qs.toString()}`), '_blank', 'noopener');
         });
         actions.appendChild(button);
       }
@@ -241,7 +252,7 @@ function ensureXLSX() {
         button.textContent = 'Insert';
         button.addEventListener('click', () => {
           if (modal) modal.style.display = 'none';
-          window.open(`department-mapping-insert.html?${qs.toString()}`, '_blank', 'noopener');
+          window.open(resolveStaticPageUrl(`department-mapping-insert.html?${qs.toString()}`), '_blank', 'noopener');
         });
         actions.appendChild(button);
       }
@@ -278,7 +289,7 @@ function ensureXLSX() {
       button.textContent = 'Insert';
       button.addEventListener('click', () => {
         if (modal) modal.style.display = 'none';
-        window.open(`plant-department-mapping-insert.html?${qs.toString()}`, '_blank', 'noopener');
+        window.open(resolveStaticPageUrl(`plant-department-mapping-insert.html?${qs.toString()}`), '_blank', 'noopener');
       });
       actions.appendChild(button);
     }
@@ -295,7 +306,7 @@ function ensureXLSX() {
           const add = (text) => { const td = document.createElement('td'); td.textContent = text == null ? '' : String(text); tr.appendChild(td); };
           add(r.plant_code);
           add(r.Dept_Code ?? r.dept_code);
-          add(r.status_id);
+          add(r.Status_id ?? r.status_id);
           add(r.app_id);
           add(r.wkf_process_def_id);
           add(r.created_date);
@@ -322,7 +333,9 @@ function ensureXLSX() {
   async function showHierarchyModal(plantCode, deptCode, email) {
     const openInsertPage = (url) => {
       try {
-        window.open(url, '_blank', 'noopener');
+        // Keep opener reference so hierarchy-insert page can request excel-data-response
+        // from the source tab when sessionStorage is unavailable in the new tab.
+        window.open(resolveStaticPageUrl(url), '_blank');
       } catch (_) {}
     };
 
@@ -331,6 +344,7 @@ function ensureXLSX() {
     const msg = document.getElementById('hierarchyMsg');
     const currentModule = (new URLSearchParams(window.location.search).get('module') || 'FAT').toUpperCase();
     const isFABModule = currentModule === 'FAB';
+    const isFAPModule = currentModule === 'FAP';
     if (!modal || !tbody || !msg) return;
     // Clear table completely - remove all child nodes as extra safeguard
     while (tbody.firstChild) {
@@ -357,35 +371,42 @@ function ensureXLSX() {
         ? `${API_BASE}/api/fab/hierarchy/check?${q.toString()}`
         : `${API_BASE}/api/hierarchy/check?${q.toString()}`;
       const res = await fetch(checkUrl);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = await res.json();
+      let json = null;
+      try { json = await res.json(); } catch (_) {}
+      if (!res.ok) {
+        const serverMsg = json && (json.message || json.error || json.details);
+        msg.textContent = serverMsg
+          ? String(serverMsg)
+          : `Failed to load hierarchy (HTTP ${res.status}).`;
+        return;
+      }
       const rows = isFABModule
-        ? ((json && json.found) ? [{
+        ? ((json && json.found && json.records) ? json.records.map(record => ({
             plant_code: json.plantCode || plantCode,
             department_code: json.departmentCode || deptCode,
-            initiator_id: json.initiatorId,
-            initiator_mailid: json.initiatorMailid,
-            reviewer_id: json.reviewerId,
-            reviewer_mailid: json.reviewerMailid,
-            cbs_ga_id: json.cbsGaId,
-            cbs_ga_mailid: json.cbsGaMailid,
-            bussiness_partner1: json.bussinessPartner1,
-            bussiness_partner_1_emailid: json.bussinessPartner1Emailid,
-            level1_approver: json.level1Approver,
-            level1_approver_emailid: json.level1ApproverEmailid,
-            bussiness_partner2: json.bussinessPartner2,
-            bussiness_partner_2_emailid: json.bussinessPartner2Emailid,
-            level2_approver: json.level2Approver,
-            level2_approver_emailid: json.level2ApproverEmailid
-          }] : [])
+            initiator_id: record.initiatorId,
+            initiator_mailid: record.initiatorMailid,
+            reviewer_id: record.reviewerId,
+            reviewer_mailid: record.reviewerMailid,
+            cbs_ga_id: record.cbsGaId,
+            cbs_ga_mailid: record.cbsGaMailid,
+            bussiness_partner1: record.bussinessPartner1,
+            bussiness_partner_1_emailid: record.bussinessPartner1Emailid,
+            level1_approver: record.level1Approver,
+            level1_approver_emailid: record.level1ApproverEmailid,
+            bussiness_partner2: record.bussinessPartner2,
+            bussiness_partner_2_emailid: record.bussinessPartner2Emailid,
+            level2_approver: record.level2Approver,
+            level2_approver_emailid: record.level2ApproverEmailid
+          })) : [])
         : ((json && json.results) || []);
       if (!rows.length) {
         msg.textContent = isFABModule
-          ? (`No FAB hierarchy found for Plant ${plantCode}, Dept ${deptCode}`)
+          ? ((json && json.message) ? String(json.message) : `No FAB hierarchy found for Plant ${plantCode}, Dept ${deptCode}`)
           : 'No hierarchy found for the provided parameters.';
       } else {
         msg.textContent = isFABModule
-          ? (json.message || 'FAB hierarchy found')
+          ? (json.message || `Found ${rows.length} FAB hierarchy record(s) for Plant ${plantCode}, Dept ${deptCode}`)
           : `Found ${rows.length} record(s).`;
       }
       
@@ -657,11 +678,21 @@ function ensureXLSX() {
             openInsertPage(url);
           });
         } else {
-          newBtn.addEventListener('click', () => {
-            const url = `hierarchy-insert.html?${qs.toString()}`;
-            console.log('Opening URL:', url);
-            openInsertPage(url);
-          });
+          // FAP Module - Open FAP Hierarchy Addition tab instead of navigating to hierarchy-insert.html
+          if (isFAPModule) {
+            newBtn.textContent = 'FAP Hierarchy Addition';
+            newBtn.addEventListener('click', () => {
+              console.log('Opening FAP Hierarchy Addition tab');
+              openFAPHierarchyTab(qs, currentRow);
+            });
+          } else {
+            // Non-FAP modules - keep existing behavior
+            newBtn.addEventListener('click', () => {
+              const url = `hierarchy-insert.html?${qs.toString()}`;
+              console.log('Opening URL:', url);
+              openInsertPage(url);
+            });
+          }
         }
       }
       
@@ -701,6 +732,39 @@ function ensureXLSX() {
   }
 
   // User details modal helpers (now in main scope)
+  function renderUserDetailsInsertAction(rows, userId) {
+    try {
+      const actions = document.getElementById('userDetailsActions');
+      if (!actions) return;
+      actions.innerHTML = '';
+
+      const uid = String((rows?.[0]?.userId ?? rows?.[0]?.user_id ?? userId) || '').trim();
+      if (!uid) return;
+
+      const a = document.createElement('button');
+      a.className = 'btn btn-success';
+      a.style.background = '#28a745'; // green
+      a.style.border = '1px solid #28a745';
+      a.style.color = '#fff';
+      a.textContent = 'Insert';
+      a.addEventListener('click', () => {
+        // Show the INSERT ROLE tab first
+        const insertRoleTab = document.getElementById('insertRoleTab');
+        if (insertRoleTab) {
+          insertRoleTab.style.display = 'block';
+          console.log('INSERT ROLE tab is now visible');
+        }
+
+        // Switch to Manual Entry tab
+        const manualTab = document.querySelector('.user-details-tab[data-tab="manual"]');
+        if (manualTab) {
+          manualTab.click();
+        }
+      });
+      actions.appendChild(a);
+    } catch (_) {}
+  }
+
   async function showUserDetailsModalForUserId(userId) {
     const modal = document.getElementById('userDetailsModal');
     if (!modal) return;
@@ -724,6 +788,9 @@ function ensureXLSX() {
       const json = await res.json();
       console.log('[Validate→Modal] Server response:', json);
       const rows = (json && json.results) || [];
+      // Always render Insert action when a valid identifier exists,
+      // including users with no currently assigned roles.
+      renderUserDetailsInsertAction(rows, userId);
       if (!rows.length) {
         if (msg) msg.textContent = 'No roles/memberships found for this user.';
         return;
@@ -758,35 +825,6 @@ function ensureXLSX() {
         tbody && tbody.appendChild(tr);
       });
 
-      // Insert button under scrollbar (#userDetailsActions)
-      try {
-        const uid = String((rows[0]?.userId ?? rows[0]?.user_id) || '').trim();
-        const actions = document.getElementById('userDetailsActions');
-        if (actions) actions.innerHTML = '';
-        if (uid && actions) {
-          const a = document.createElement('button');
-          a.className = 'btn btn-success';
-          a.style.background = '#28a745'; // green
-          a.style.border = '1px solid #28a745';
-          a.style.color = '#fff';
-          a.textContent = 'Insert';
-          a.addEventListener('click', () => {
-            // Show the INSERT ROLE tab first
-            const insertRoleTab = document.getElementById('insertRoleTab');
-            if (insertRoleTab) {
-              insertRoleTab.style.display = 'block';
-              console.log('INSERT ROLE tab is now visible');
-            }
-            
-            // Switch to Manual Entry tab
-            const manualTab = document.querySelector('.user-details-tab[data-tab="manual"]');
-            if (manualTab) {
-              manualTab.click();
-            }
-          });
-          actions.appendChild(a);
-        }
-      } catch (_) {}
     } catch (err) {
       console.error('[Validate→Modal] Error fetching details:', err);
       setBackoff();
@@ -894,8 +932,131 @@ function ensureXLSX() {
       showToast('Hierarchy params missing. Validate file first.', 'error');
       return;
     }
+    const currentModule = (new URLSearchParams(window.location.search).get('module') || 'FAT').toUpperCase();
+    if (currentModule === 'FAC') {
+      const lcmEmail = h.getAttribute('data-lcm-email') || initiatorEmail;
+      const cbs1Email = h.getAttribute('data-cbs1-email') || '';
+      const cbs2Email = h.getAttribute('data-cbs2-email') || '';
+      showFACHierarchyModal({
+        plantCode,
+        deptCode,
+        lcmEmail,
+        cbs1Email,
+        cbs2Email
+      });
+      return;
+    }
     showHierarchyModal(plantCode, deptCode, initiatorEmail);
   });
+
+  async function showFACHierarchyModal({ plantCode, deptCode, lcmEmail, cbs1Email, cbs2Email }) {
+    const modal = document.getElementById('hierarchyModal');
+    const msg = document.getElementById('hierarchyMsg');
+    const table = document.getElementById('hierarchyTable');
+    const insertBtn = document.getElementById('hierarchyInsertBtn');
+    if (!modal || !msg || !table || !insertBtn) return;
+
+    // Update title
+    try {
+      const title = modal.querySelector('.modal-title');
+      if (title) title.textContent = 'FAC Hierarchy Check';
+    } catch (_) {}
+
+    // Configure insert action (opens FAC insert form page)
+    insertBtn.textContent = 'Insert FAC Hierarchy';
+    insertBtn.onclick = () => {
+      const qs = new URLSearchParams();
+      qs.set('plant_code', plantCode);
+      qs.set('dept_code', deptCode);
+      qs.set('lcm_user', lcmEmail || '');
+      qs.set('cbs_user1', cbs1Email || '');
+      qs.set('cbs_user2', cbs2Email || '');
+      qs.set('status_id', '1');
+      const url = `fac/fac-hierarchy-insert.html?${qs.toString()}`;
+      try {
+        if (typeof openModal === 'function') {
+          openModal(url, 'FAC Hierarchy Insert');
+        } else {
+          window.open(resolveStaticPageUrl(url), '_blank', 'noopener');
+        }
+      } catch (_) {
+        window.open(resolveStaticPageUrl(url), '_blank', 'noopener');
+      }
+    };
+
+    // Reset and show modal
+    msg.textContent = 'Loading FAC hierarchy...';
+    const thead = table.querySelector('thead');
+    const tbody = table.querySelector('tbody');
+    if (tbody) tbody.innerHTML = '';
+    if (thead) {
+      thead.innerHTML = `
+        <tr>
+          <th>id</th>
+          <th>plant_code</th>
+          <th>plant_name</th>
+          <th>dept_code</th>
+          <th>dept_name</th>
+          <th>lcm_user</th>
+          <th>cbs_user1</th>
+          <th>cbs_user2</th>
+          <th>status_id</th>
+        </tr>
+      `;
+    }
+    modal.style.display = 'flex';
+    document.body.classList.add('modal-open', 'hierarchy-modal-open');
+    // Keep same transition behavior as existing hierarchy modal flow
+    setTimeout(() => {
+      try { modal.classList.add('show'); } catch (_) {}
+    }, 10);
+    try {
+      table.style.display = '';
+      if (tbody) tbody.style.display = '';
+    } catch (_) {}
+
+    // Call FAC check API
+    try {
+      const q = new URLSearchParams();
+      q.set('plantCode', plantCode);
+      q.set('deptCode', deptCode);
+      if (lcmEmail) q.set('lcmUser', lcmEmail);
+      const res = await fetch(`${API_BASE}/api/fac/hierarchy/check?${q.toString()}`);
+      const json = await res.json().catch(() => null);
+      if (!res.ok) {
+        msg.textContent = (json && (json.message || json.error)) ? String(json.message || json.error) : `FAC check failed (HTTP ${res.status}).`;
+        return;
+      }
+      const rows = (json && json.results) ? json.results : [];
+      if (!Array.isArray(rows) || rows.length === 0) {
+        msg.textContent = `No active FAC hierarchy found for Plant ${plantCode}, Dept ${deptCode} (LM: ${lcmEmail || '-'})`;
+        return;
+      }
+      msg.textContent = `Found ${rows.length} active FAC hierarchy record(s).`;
+      if (!tbody) return;
+      tbody.innerHTML = '';
+      const addCell = (tr, v) => {
+        const td = document.createElement('td');
+        td.textContent = v == null ? '' : String(v);
+        tr.appendChild(td);
+      };
+      rows.forEach(r => {
+        const tr = document.createElement('tr');
+        addCell(tr, r.id);
+        addCell(tr, r.plant_code ?? r.plantCode);
+        addCell(tr, r.plant_name ?? r.plantName);
+        addCell(tr, r.dept_code ?? r.deptCode);
+        addCell(tr, r.dept_name ?? r.deptName);
+        addCell(tr, r.lcm_user ?? r.lcmUser);
+        addCell(tr, r.cbs_user1 ?? r.cbsUser1);
+        addCell(tr, r.cbs_user2 ?? r.cbsUser2);
+        addCell(tr, r.status_id ?? r.statusId);
+        tbody.appendChild(tr);
+      });
+    } catch (e) {
+      msg.textContent = 'Failed to load FAC hierarchy. Check server logs/connection.';
+    }
+  }
 
   // Global: open plant mapping for the first valid email button
   document.addEventListener('click', (e) => {
@@ -971,13 +1132,12 @@ function ensureXLSX() {
     const spinner = document.getElementById('spinner');
     const validateBtn = document.getElementById('validateBtn');
     const codeSummary = document.getElementById('codeSummary');
-    const currentModule = new URLSearchParams(window.location.search).get('module') || 'FAT';
+    const currentModule = (new URLSearchParams(window.location.search).get('module') || 'FAT').toUpperCase();
     try {
-      window.currentModule = currentModule === 'FAB'
-        ? 'FAB'
-        : (currentModule === 'FAP' ? 'FAP' : 'FAT');
+      window.currentModule = ['FAB', 'FAP', 'FAC'].includes(currentModule) ? currentModule : 'FAT';
     } catch (_) {}
     const isFATModule = currentModule === 'FAT';
+    const isFAPModule = currentModule === 'FAP';
     let fatRowSelector = null;
     let fatRowSelectorWrap = null;
 
@@ -1532,7 +1692,12 @@ function ensureXLSX() {
         if (res.ok) {
           const data = await res.json();
           console.log('Role check API response:', data);
-          return data.message || 'Error checking role';
+          // Check if user has any assigned roles
+          if (data.assignedRoles && data.assignedRoles.length > 0) {
+            return 'Role is assigned';
+          } else {
+            return 'Role is not assigned';
+          }
         } else {
           console.log('Role check API failed');
           return 'Error checking role';
@@ -1544,22 +1709,75 @@ function ensureXLSX() {
     }
 
     // Helper function to get expected role based on header mapping
-    function getExpectedRoleByHeader(headerName) {
+    function getExpectedRoleByHeader(headerName, context = {}) {
       console.log('Processing header:', headerName);
+
+      const normalizeHeaderKey = (value) => String(value || '')
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, ' ');
+
+      const key = normalizeHeaderKey(headerName);
+
+      if (currentModule === 'FAC') {
+        if (key === 'email id' || key === 'lm email id' || key === 'lcm email id') {
+          console.log('Header mapping result:', headerName, '->', 'LM USER');
+          return 'LM USER';
+        }
+        if (key.includes('cbs') && (key.includes('email') || key.includes('mail'))) {
+          const role = context.cbsSequence === 2 ? 'CBS USER 2' : 'CBS USER 1';
+          console.log('Header mapping result:', headerName, '->', role);
+          return role;
+        }
+      }
       
       const headerRoleMapping = {
-        'POC Email ID': 'FA-POC',
-        'Approver Email ID': 'FA-FUNCTIONAL',
-        'CBS Member1 MAIL ID': 'FA-CBS',
-        'CBS Member2 MAIL ID': 'FA-CBS'
+        'poc email id': 'FA-POC',
+        'poc email': 'FA-POC',
+        'email id': 'FA-POC',
+        'approver email id': 'FA-FUNCTIONAL',
+        'approver email': 'FA-FUNCTIONAL',
+        'cbs email id': 'FA-CBS',
+        'cbs member1 mail id': 'FA-CBS',
+        'cbs member2 mail id': 'FA-CBS',
+        'cbs member3 mail id': 'FA-CBS'
       };
       
-      const result = headerRoleMapping[headerName] || '-';
+      const result = headerRoleMapping[key] || '-';
       console.log('Header mapping result:', headerName, '->', result);
       return result;
     }
 
+    function buildEmailExpectedRoleMapping(selectedExcelRowNumber = null) {
+      const mapping = {};
+      if (!parsedData || !Array.isArray(parsedData)) return mapping;
+      const start = hasHeaders ? 1 : 0;
+      const emailIdxs = Array.isArray(headerIndices.emails) ? headerIndices.emails : [];
+      for (let r = start; r < parsedData.length; r++) {
+        if (selectedExcelRowNumber && (r + 1) !== selectedExcelRowNumber) continue;
+        const row = Array.isArray(parsedData[r]) ? parsedData[r] : [parsedData[r]];
+        let cbsSequence = 0;
+        for (const idx of emailIdxs) {
+          if (idx === undefined || idx === null) continue;
+          const headerName = headers[idx] ? String(headers[idx]).trim() : `Email Column ${idx + 1}`;
+          const emailValue = normalize(row[idx]);
+          const headerKey = String(headerName || '').toLowerCase();
+          const roleContext = {};
+          if (currentModule === 'FAC' && headerKey.includes('cbs') && (headerKey.includes('email') || headerKey.includes('mail'))) {
+            roleContext.cbsSequence = ++cbsSequence;
+          }
+          const expectedRole = getExpectedRoleByHeader(headerName, roleContext);
+          if (!emailValue || !normalizeRole(expectedRole)) continue;
+          mapping[emailValue] = expectedRole;
+          const emailKey = normalizeEmailKey(emailValue);
+          if (emailKey) mapping[emailKey] = expectedRole;
+        }
+      }
+      return mapping;
+    }
+
     async function renderResults(result, emailResults) {
+      const currentModule = (new URLSearchParams(window.location.search).get('module') || 'FAT').toUpperCase();
       const resultsSection = document.getElementById('results');
       const tbody = document.querySelector('#resultsTable tbody');
             const sumValid = document.getElementById('sumValid');
@@ -1574,6 +1792,8 @@ function ensureXLSX() {
       asArray.forEach((res) => {
         const plantValid = res.plantStatus === 'Existing';
         const deptValid = res.departmentStatus === 'Existing';
+        const plantStatus = plantValid ? 'Existing' : 'Not Existing';
+        const deptStatus = deptValid ? 'Existing' : 'Not Existing';
         
         // Get actual column names from Excel headers
         const plantColumnName = headerIndices.plant >= 0 && headers[headerIndices.plant] ? String(headers[headerIndices.plant]).trim() : 'Plant Code';
@@ -1584,7 +1804,7 @@ function ensureXLSX() {
           type: 'plant',
           code: res.plantCode || '-',
           name: res.plantCode || '-', // Show the actual plant code value
-          status: res.plantStatus || '-',
+          status: plantStatus,
           message: plantValid ? 'Plant found' : 'Plant not found',
           expectedRole: '-'
         });
@@ -1593,8 +1813,8 @@ function ensureXLSX() {
           type: 'department',
           code: res.departmentCode || '-',
           name: res.departmentCode || '-', // Show the actual department code value
-          status: res.departmentStatus || '-',
-          message: deptValid ? 'Department found' : 'Department not found',
+          status: deptStatus,
+          message: deptValid ? 'Department found' : 'Department not exists',
           expectedRole: '-'
         });
       });
@@ -1602,6 +1822,7 @@ function ensureXLSX() {
       // Append all email results as individual rows
       if (Array.isArray(emailResults)) {
         console.log('Email results to display:', emailResults);
+        let facCbsSequence = 0;
         
         // Keep existing email-to-header mapping from source rows (used for role lookup).
         window.emailToHeaderMapping = window.emailToHeaderMapping || {};
@@ -1627,6 +1848,11 @@ function ensureXLSX() {
           }
           
           console.log('Processing email result:', { email: normalizedEmail, header: emailColumnName, status: er.status });
+          const roleContext = {};
+          const normalizedHeaderForRole = String(emailColumnName || '').toLowerCase();
+          if (currentModule === 'FAC' && normalizedHeaderForRole.includes('cbs') && (normalizedHeaderForRole.includes('email') || normalizedHeaderForRole.includes('mail'))) {
+            roleContext.cbsSequence = ++facCbsSequence;
+          }
           
           // Only create mapping for non-empty emails
           if (normalizedEmail !== "") {
@@ -1648,7 +1874,7 @@ function ensureXLSX() {
               name: '-',
               status: 'NOT FOUND',
               message: 'No data provided',
-              expectedRole: '-'
+              expectedRole: getExpectedRoleByHeader(emailColumnName, roleContext)
             });
           } else {
             // Handle non-empty emails
@@ -1659,7 +1885,7 @@ function ensureXLSX() {
               name: normalizedEmail || '-', // Show the actual email value
               status: er.status || '-',
               message: er.message || 'Not found', // Show the actual message including role assignment status
-              expectedRole: getExpectedRoleByHeader(emailColumnName) // Store expected role
+              expectedRole: getExpectedRoleByHeader(emailColumnName, roleContext) // Store expected role
             });
           }
         });
@@ -1737,19 +1963,22 @@ const total = displayRows.length;
 
       // Add "Check Plant Mapping" button for the first valid email
       try {
-        const firstValid = Array.isArray(emailResults) ? emailResults.find(er => er && er.email && er.status === 'Existing') : null;
         const existingBtn = document.getElementById('checkPlantMappingBtn');
         if (existingBtn) existingBtn.remove();
-        if (firstValid && firstValid.email) {
-          const bar = document.querySelector('.validate-bar') || resultsSection;
-          if (bar) {
-            const btn = document.createElement('button');
-            btn.id = 'checkPlantMappingBtn';
-            btn.className = 'btn btn-success';
-            btn.style.marginLeft = '10px';
-            btn.textContent = 'Check Plant Mapping';
-            btn.addEventListener('click', () => showPlantMappingModalForEmail(firstValid.email));
-            bar.appendChild(btn);
+        // FAC does not require plant mapping checks.
+        if (currentModule !== 'FAC') {
+          const firstValid = Array.isArray(emailResults) ? emailResults.find(er => er && er.email && er.status === 'Existing') : null;
+          if (firstValid && firstValid.email) {
+            const bar = document.querySelector('.validate-bar') || resultsSection;
+            if (bar) {
+              const btn = document.createElement('button');
+              btn.id = 'checkPlantMappingBtn';
+              btn.className = 'btn btn-success';
+              btn.style.marginLeft = '10px';
+              btn.textContent = 'Check Plant Mapping';
+              btn.addEventListener('click', () => showPlantMappingModalForEmail(firstValid.email));
+              bar.appendChild(btn);
+            }
           }
         }
       } catch (_) {}
@@ -1782,13 +2011,30 @@ const total = displayRows.length;
           if (bar) {
             const hbtn = document.createElement('button');
             hbtn.id = 'hierarchyCheckBtn';
-            hbtn.className = 'btn btn-outline-secondary';
+            hbtn.className = (currentModule === 'FAC') ? 'btn btn-success' : 'btn btn-outline-secondary';
             hbtn.style.marginLeft = '10px';
-            hbtn.textContent = 'Hierarchy Check';
+            hbtn.textContent = currentModule === 'FAC'
+              ? 'FAC Hierarchy Insert'
+              : 'Hierarchy Check';
             // Set data attributes for the global event listener
             hbtn.setAttribute('data-plant', plantCode);
             hbtn.setAttribute('data-dept', deptCode);
             hbtn.setAttribute('data-email', initiatorEmail);
+            if (currentModule === 'FAC') {
+              const norm = (s) => String(s || '').trim().toLowerCase();
+              const pickEmailByHeader = (needle) => {
+                const row = rows.find(r => r && r.type === 'email' && r.status === 'Existing' && norm(r.field).includes(norm(needle)));
+                return row && row.code ? String(row.code).trim() : '';
+              };
+              const cbsRows = rows.filter(r => r && r.type === 'email' && r.status === 'Existing' && norm(r.field).includes('cbs'));
+              const lcmEmail = pickEmailByHeader('poc') || pickEmailByHeader('email id') || initiatorEmail;
+              const cbs1Email = pickEmailByHeader('cbs member1') || pickEmailByHeader('cbs member 1') || (cbsRows[0] && cbsRows[0].code ? String(cbsRows[0].code).trim() : '');
+              const cbs2Email = pickEmailByHeader('cbs member2') || pickEmailByHeader('cbs member 2') || (cbsRows[1] && cbsRows[1].code ? String(cbsRows[1].code).trim() : '');
+              if (lcmEmail) hbtn.setAttribute('data-lcm-email', lcmEmail);
+              if (cbs1Email) hbtn.setAttribute('data-cbs1-email', cbs1Email);
+              if (cbs2Email) hbtn.setAttribute('data-cbs2-email', cbs2Email);
+
+            }
             bar.appendChild(hbtn);
           }
         }
@@ -1807,6 +2053,17 @@ const total = displayRows.length;
       }
       return res.json();
     }
+
+    async function openFACHierarchyInsert(payload) {
+      try {
+        const result = await postJSON(`${API_BASE}/api/fac/hierarchy`, payload);
+        showToast(result.message || 'FAC hierarchy inserted successfully', 'success');
+      } catch (error) {
+        console.error('FAC hierarchy insert failed:', error);
+        showToast('FAC hierarchy insert failed. Check console for details.', 'error');
+      }
+    }
+    try { window.openFACHierarchyInsert = openFACHierarchyInsert; } catch (_) {}
 
     // Handle Insert button clicks -> open modal with insert page
     document.addEventListener('click', (e) => {
@@ -1834,15 +2091,44 @@ const total = displayRows.length;
     // Listen for child (iframe) success to close modal
     window.addEventListener('message', (event) => {
       const data = event.data || {};
+      if (data && data.type === 'request-excel-data') {
+        try {
+          // Only respond to our own insert pages (typically http://localhost:8080 when index.html is opened via file://)
+          const expectedOrigin = (() => {
+            try {
+              if (API_BASE) return new URL(API_BASE).origin;
+            } catch (_) {}
+            try { return window.location.origin; } catch (_) {}
+            return '';
+          })();
+          // If the parent is opened via file:// the origin is typically "null" and cannot match the child.
+          const originOk = !expectedOrigin || expectedOrigin === 'null' || event.origin === expectedOrigin;
+          if (!originOk) return;
+
+          const excelDataRaw = sessionStorage.getItem('excelData');
+          const currentRowRaw = sessionStorage.getItem('currentHierarchyRow');
+          const payload = {
+            type: 'excel-data-response',
+            excelData: excelDataRaw ? JSON.parse(excelDataRaw) : [],
+            currentHierarchyRow: currentRowRaw ? JSON.parse(currentRowRaw) : {}
+          };
+          const targetOrigin = (event.origin && event.origin !== 'null') ? event.origin : '*';
+          event.source && event.source.postMessage(payload, targetOrigin);
+        } catch (err) {
+          console.warn('[ExcelDataBridge] Failed to respond:', err);
+        }
+        return;
+      }
       if (data && data.type === 'insert-success') {
         closeModal();
         // Auto-revalidate after insert so messages update immediately
         setTimeout(() => {
-          if (typeof validateData === 'function') {
-            validateData();
-          } else if (typeof validateFABData === 'function') {
-            validateFABData();
+          // Trigger the same UI flow as the Validate button so results re-render.
+          if (typeof validateBtn !== 'undefined' && validateBtn && typeof validateBtn.click === 'function') {
+            validateBtn.click();
+            return;
           }
+          if (typeof validateFABData === 'function') validateFABData();
         }, 300);
       }
       if (data && data.type === 'close-insert') {
@@ -1853,11 +2139,11 @@ const total = displayRows.length;
     function openModal(url, title) {
       if (!modalOverlay || !modalFrame) {
         // Fallback to navigation if modal not present
-        window.location.href = url;
+        window.location.href = resolveStaticPageUrl(url);
         return;
       }
       if (modalTitle) modalTitle.textContent = title || 'Insert';
-      modalFrame.src = url;
+      modalFrame.src = resolveStaticPageUrl(url);
       modalOverlay.style.display = 'flex';
     }
 
@@ -2022,6 +2308,7 @@ const total = displayRows.length;
         
         // Create/refresh email-to-header mapping before checking emails
         window.emailToHeaderMapping = buildEmailHeaderMapping(selectedRowNumber);
+        window.emailToExpectedRoleMapping = buildEmailExpectedRoleMapping(selectedRowNumber);
         console.log('Email mapping count:', Object.keys(window.emailToHeaderMapping).length);
         
         const emailResults = await checkEmails(emails);
@@ -2390,5 +2677,340 @@ const total = displayRows.length;
     document.addEventListener('DOMContentLoaded', initUserDetailsTabs);
   } else {
     initUserDetailsTabs();
+  }
+
+  // FAP Hierarchy Addition Tab System
+  function openFAPHierarchyTab(queryParams, currentRow) {
+    console.log('Opening FAP Hierarchy Addition tab with params:', queryParams.toString());
+    console.log('Current row data:', currentRow);
+    
+    // Store the form data for the tab
+    const formData = {
+      plant_code: queryParams.get('plant_code') || '',
+      department: queryParams.get('dept_code') || '',
+      initiator_login_name: queryParams.get('poc_login_name') || '',
+      reviewer1_list: queryParams.get('reviewer_email') || '',
+      reviewer2_list: queryParams.get('level1_reviewer_email') || '',
+      approver_list: queryParams.get('approver_email') || '',
+      cbs_member1_email: queryParams.get('cbs1_email') || '',
+      cbs_member2_email: queryParams.get('cbs2_email') || '',
+      cbs_member3_email: queryParams.get('cbs3_email') || '',
+      management_approver_list: queryParams.get('level2_approver_email') || '',
+      status_id: 1 // Default to Active
+    };
+
+    console.log('Form data prepared:', formData);
+    
+    // Create a new tab in the existing tab panel
+    createNewTab({
+      label: 'FAP Hierarchy Addition',
+      closable: true,
+      component: 'FAPHierarchyAdditionForm',
+      params: formData
+    });
+  }
+
+  function createNewTab(options) {
+    // Find the existing tab panel (similar to how user details tabs work)
+    const tabPanel = document.querySelector('.tab-panel') || document.querySelector('.tab-container');
+    if (!tabPanel) {
+      console.error('Tab panel not found');
+      // Fallback: create a simple modal if tab system doesn't exist
+      showFAPHierarchyModal(options.params);
+      return;
+    }
+
+    // Create tab element
+    const tab = document.createElement('div');
+    tab.className = 'tab-item active';
+    tab.innerHTML = `
+      <span class="tab-label">${options.label}</span>
+      <button class="tab-close" onclick="closeTab(this)">×</button>
+    `;
+
+    // Create tab content
+    const tabContent = document.createElement('div');
+    tabContent.className = 'tab-content active';
+    tabContent.innerHTML = createFAPHierarchyFormHTML(options.params);
+
+    // Add to tab panel
+    const tabBar = tabPanel.querySelector('.tab-bar') || tabPanel;
+    const tabContentContainer = tabPanel.querySelector('.tab-content-container') || tabPanel;
+    
+    if (tabBar && tabContentContainer) {
+      // Deactivate existing tabs
+      tabBar.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+      tabContentContainer.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      
+      // Add new tab
+      tabBar.appendChild(tab);
+      tabContentContainer.appendChild(tabContent);
+      
+      // Initialize the form
+      initializeFAPHierarchyForm(options.params);
+    } else {
+      console.error('Tab bar or content container not found');
+      // Fallback
+      showFAPHierarchyModal(options.params);
+    }
+  }
+
+  function closeTab(closeButton) {
+    const tab = closeButton.closest('.tab-item');
+    const tabContent = Array.from(document.querySelectorAll('.tab-content')).find(content => 
+      content.classList.contains('active')
+    );
+    
+    if (tab && tabContent) {
+      tab.remove();
+      tabContent.remove();
+      
+      // Activate first remaining tab if any
+      const remainingTabs = document.querySelectorAll('.tab-item');
+      const remainingContents = document.querySelectorAll('.tab-content');
+      
+      if (remainingTabs.length > 0 && remainingContents.length > 0) {
+        remainingTabs[0].classList.add('active');
+        remainingContents[0].classList.add('active');
+      }
+    }
+  }
+
+  function createFAPHierarchyFormHTML(formData) {
+    return `
+      <div class="fap-hierarchy-form">
+        <div class="form-header">
+          <h4>FAP Hierarchy Addition</h4>
+          <button class="btn btn-primary btn-sm" onclick="loadFAPData()">Load Data</button>
+        </div>
+        
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Plant Code</label>
+            <input type="text" id="plant_code" value="${formData.plant_code}" readonly>
+          </div>
+          
+          <div class="form-group">
+            <label>Department</label>
+            <input type="text" id="department" value="${formData.department}" readonly>
+          </div>
+          
+          <div class="form-group">
+            <label>Initiator Login Name</label>
+            <input type="text" id="initiator_login_name" value="${formData.initiator_login_name}" readonly>
+          </div>
+          
+          <div class="form-group">
+            <label>Reviewer 1 Email</label>
+            <input type="text" id="reviewer1_email" value="${formData.reviewer1_list}" readonly>
+          </div>
+          
+          <div class="form-group">
+            <label>Reviewer 2 Email</label>
+            <input type="text" id="reviewer2_email" value="${formData.reviewer2_list}" readonly>
+          </div>
+          
+          <div class="form-group">
+            <label>Approver Email</label>
+            <input type="text" id="approver_email" value="${formData.approver_list}" readonly>
+          </div>
+          
+          <div class="form-group">
+            <label>CBS Member 1 Email</label>
+            <input type="text" id="cbs_member1_email" value="${formData.cbs_member1_email}" readonly>
+          </div>
+          
+          <div class="form-group">
+            <label>CBS Member 2 Email</label>
+            <input type="text" id="cbs_member2_email" value="${formData.cbs_member2_email}" readonly>
+          </div>
+          
+          <div class="form-group">
+            <label>CBS Member 3 Email</label>
+            <input type="text" id="cbs_member3_email" value="${formData.cbs_member3_email}" readonly>
+          </div>
+          
+          <div class="form-group">
+            <label>Management Approver Email</label>
+            <input type="text" id="management_approver_email" value="${formData.management_approver_list}" readonly>
+          </div>
+          
+          <div class="form-group">
+            <label>Status</label>
+            <select id="status_id">
+              <option value="1">Active</option>
+              <option value="2">Inactive</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="name-fields" style="display: none;">
+          <h5>User Details (Loaded)</h5>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Reviewer 1 Name</label>
+              <input type="text" id="reviewer1_name" readonly>
+            </div>
+            <div class="form-group">
+              <label>Reviewer 2 Name</label>
+              <input type="text" id="reviewer2_name" readonly>
+            </div>
+            <div class="form-group">
+              <label>Approver Name</label>
+              <input type="text" id="approver_name" readonly>
+            </div>
+            <div class="form-group">
+              <label>Management Approver Name</label>
+              <input type="text" id="management_approver_name" readonly>
+            </div>
+            <div class="form-group">
+              <label>CBS Member Names</label>
+              <input type="text" id="cbs_member_names" readonly>
+            </div>
+          </div>
+        </div>
+        
+        <div class="form-actions">
+          <button class="btn btn-success" onclick="insertFAPHierarchy()">Insert Hierarchy</button>
+          <button class="btn btn-secondary" onclick="closeTab(this)">Cancel</button>
+        </div>
+        
+        <div class="loading-indicator" style="display: none;">
+          <div class="spinner"></div>
+          <span>Loading...</span>
+        </div>
+      </div>
+    `;
+  }
+
+  function initializeFAPHierarchyForm(formData) {
+    // Set initial status
+    document.getElementById('status_id').value = formData.status_id;
+    
+    // Store form data globally for later use
+    window.fapHierarchyFormData = formData;
+  }
+
+  function loadFAPData() {
+    const loadingIndicator = document.querySelector('.loading-indicator');
+    const nameFields = document.querySelector('.name-fields');
+    const loadBtn = document.querySelector('.form-header button');
+    
+    loadingIndicator.style.display = 'flex';
+    loadBtn.disabled = true;
+    loadBtn.textContent = 'Loading...';
+    
+    const emails = [
+      document.getElementById('reviewer1_email').value,
+      document.getElementById('reviewer2_email').value,
+      document.getElementById('approver_email').value,
+      document.getElementById('management_approver_email').value,
+      document.getElementById('cbs_member1_email').value,
+      document.getElementById('cbs_member2_email').value,
+      document.getElementById('cbs_member3_email').value
+    ].filter(email => email);
+    
+    // Load user details in parallel
+    Promise.all(emails.map(email => getUserDetails(email)))
+      .then(results => {
+        // Fill name fields
+        if (results[0]) document.getElementById('reviewer1_name').value = results[0].name || '';
+        if (results[1]) document.getElementById('reviewer2_name').value = results[1].name || '';
+        if (results[2]) document.getElementById('approver_name').value = results[2].name || '';
+        if (results[3]) document.getElementById('management_approver_name').value = results[3].name || '';
+        
+        const cbsNames = results.slice(4).map(r => r.name || '').filter(n => n).join(', ');
+        document.getElementById('cbs_member_names').value = cbsNames;
+        
+        nameFields.style.display = 'block';
+        loadingIndicator.style.display = 'none';
+        loadBtn.disabled = false;
+        loadBtn.textContent = 'Load Data';
+      })
+      .catch(error => {
+        console.error('Error loading user data:', error);
+        loadingIndicator.style.display = 'none';
+        loadBtn.disabled = false;
+        loadBtn.textContent = 'Load Data';
+        alert('Failed to load user data. Please try again.');
+      });
+  }
+
+  function getUserDetails(email) {
+    return fetch(`${API_BASE}/api/user/${email}`)
+      .then(response => response.json())
+      .catch(error => {
+        console.error(`Error fetching user details for ${email}:`, error);
+        return null;
+      });
+  }
+
+  function insertFAPHierarchy() {
+    const formData = {
+      plant_code: document.getElementById('plant_code').value,
+      department: document.getElementById('department').value,
+      initiator_login_name: document.getElementById('initiator_login_name').value,
+      reviewer1_list: document.getElementById('reviewer1_email').value,
+      reviewer2_list: document.getElementById('reviewer2_email').value,
+      approver_list: document.getElementById('approver_email').value,
+      cbs_member1_email: document.getElementById('cbs_member1_email').value,
+      cbs_member2_email: document.getElementById('cbs_member2_email').value,
+      cbs_member3_email: document.getElementById('cbs_member3_email').value,
+      management_approver_list: document.getElementById('management_approver_email').value,
+      status_id: parseInt(document.getElementById('status_id').value)
+    };
+
+    const insertBtn = document.querySelector('.form-actions .btn-success');
+    insertBtn.disabled = true;
+    insertBtn.textContent = 'Inserting...';
+
+    fetch(`${API_BASE}/api/fap-task-assignee/hierarchy`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(result => {
+      if (result.success) {
+        alert(`Success: ${result.totalInserted} rows inserted successfully!`);
+        closeTab(document.querySelector('.tab-close'));
+        // Refresh parent page table if needed
+        if (typeof refreshFAPTable === 'function') {
+          refreshFAPTable(result.insertedIds);
+        }
+      } else {
+        alert(`Error: ${result.message}`);
+      }
+    })
+    .catch(error => {
+      console.error('Error inserting hierarchy:', error);
+      alert(`Error: Insert failed. Please try again.`);
+    })
+    .finally(() => {
+      insertBtn.disabled = false;
+      insertBtn.textContent = 'Insert Hierarchy';
+    });
+  }
+
+  function showFAPHierarchyModal(formData) {
+    // Fallback modal implementation if tab system doesn't exist
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.style.display = 'flex';
+    modal.innerHTML = `
+      <div class="modal-content" style="max-width: 800px;">
+        <div class="modal-header">
+          <h5>FAP Hierarchy Addition</h5>
+          <button class="btn btn-outline-secondary btn-sm" onclick="this.closest('.modal-overlay').remove()">×</button>
+        </div>
+        <div class="modal-body">
+          ${createFAPHierarchyFormHTML(formData)}
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    initializeFAPHierarchyForm(formData);
   }
 })();

@@ -1,5 +1,6 @@
 package com.vguard.validation.repository;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -9,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 @Repository
+@Slf4j
 public class HierarchyRepository {
     private final JdbcTemplate jdbc;
 
@@ -113,6 +115,17 @@ public class HierarchyRepository {
                     new Object[]{email},
                     String.class
             );
+        } catch (EmptyResultDataAccessException ex) {
+            return null;
+        }
+    }
+
+    public Long findUserIdByEmail(String email) {
+        try {
+            String sql = "SELECT id FROM users " +
+                    "WHERE LOWER(TRIM(REPLACE(REPLACE(email_id1,'[',''),']',''))) = LOWER(TRIM(?)) " +
+                    "LIMIT 1";
+            return jdbc.queryForObject(sql, new Object[]{email}, Long.class);
         } catch (EmptyResultDataAccessException ex) {
             return null;
         }

@@ -1,5 +1,6 @@
 package com.vguard.validation.fap.service;
 
+import lombok.extern.slf4j.Slf4j;
 import com.vguard.validation.fap.dto.FapCheckRequest;
 import com.vguard.validation.fap.dto.FapCheckResponse;
 import com.vguard.validation.fap.dto.FapEmailEntryRequest;
@@ -22,6 +23,7 @@ import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class FapValidationService {
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}$", Pattern.CASE_INSENSITIVE);
 

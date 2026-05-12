@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title id="pageTitle">Excel Validation | Workflow Portal</title>
+  <link rel="icon" type="image/png" href="./vg-icon.png" />
   <!-- Google Font -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -144,9 +145,14 @@
     <div class="card">
       <div class="card-header d-flex justify-content-between align-items-center">
         <h3><i id="moduleIcon" class="bi bi-file-earmark-spreadsheet"></i> <span id="moduleTitle">Excel Validation</span></h3>
-        <a href="landing.html" class="btn btn-outline-secondary">
-          <i class="bi bi-arrow-left"></i> Back to Portal
-        </a>
+        <div class="d-flex gap-2">
+          <a href="fap-task-assignee.html" class="btn btn-outline-primary d-none" id="fapTaskAssigneeLink">
+            <i class="bi bi-people-fill"></i> FAP Task Assignee
+          </a>
+          <a href="landing.html" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Portal
+          </a>
+        </div>
       </div>
       <div class="card-body">
         <div id="dropZone" class="drop-zone">
@@ -464,8 +470,8 @@
       'FAT': { title: 'FAT - Fixed Asset Transfer', icon: 'bi-arrow-left-right' },
       'FAB': { title: 'FAB - Fixed Asset Budget', icon: 'bi-cash-stack' },
       'FAD': { title: 'FAD - Fixed Asset Disposal', icon: 'bi-trash3' },
-      'FAP': { title: 'FAP - Fixed Asset Procurement', icon: 'bi-cart-plus' },
-      'FACAP': { title: 'FACAP - Fixed Asset Capitalization', icon: 'bi-building-add' }
+      'FAC': { title: 'FAC - Fixed Asset Capitalization', icon: 'bi-building-add' },
+      'FAP': { title: 'FAP - Fixed Asset Procurement', icon: 'bi-cart-plus' }
     };
     
     // Update page title and content based on module
@@ -474,6 +480,12 @@
       document.getElementById('pageTitle').textContent = `${config.title} | Workflow Portal`;
       document.getElementById('moduleTitle').textContent = config.title;
       document.getElementById('moduleIcon').className = `bi ${config.icon}`;
+      
+      // Show FAP Task Assignee link only for FAP module
+      const fapTaskAssigneeLink = document.getElementById('fapTaskAssigneeLink');
+      if (fapTaskAssigneeLink) {
+        fapTaskAssigneeLink.classList.toggle('d-none', module !== 'FAP');
+      }
     });
   </script>
 </body>

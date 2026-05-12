@@ -1,5 +1,6 @@
 package com.vguard.validation.repository;
 
+import lombok.extern.slf4j.Slf4j;
 import com.vguard.validation.dto.UserDetailRow;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -15,6 +16,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
+@Slf4j
 public class UserDetailsRepository {
     private static final Logger log = LoggerFactory.getLogger(UserDetailsRepository.class);
 

@@ -5,6 +5,7 @@ import com.vguard.validation.fab.entity.FabTaskAssignmentMap;
 import com.vguard.validation.fab.repository.FabHierarchyRepository;
 import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -16,6 +17,7 @@ import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 @Transactional
 public class FabHierarchyService {
     private final FabHierarchyRepository fabHierarchyRepository;
@@ -24,9 +26,37 @@ public class FabHierarchyService {
 
     @Transactional(readOnly = true)
     public FabHierarchyCheckResponse checkHierarchy(String plantCode, String departmentCode) {
-        return fabHierarchyRepository.findByPlantCodeAndDepartmentCode(safe(plantCode), safe(departmentCode))
-                .map(FabHierarchyCheckResponse::found)
-                .orElseGet(() -> FabHierarchyCheckResponse.notFound(safe(plantCode), safe(departmentCode)));
+        log.info("checkHierarchy called with plantCode: {}, departmentCode: {}", plantCode, departmentCode);
+        String safePlantCode = safe(plantCode);
+        String safeDepartmentCode = safe(departmentCode);
+        log.info("Safe values - plantCode: {}, departmentCode: {}", safePlantCode, safeDepartmentCode);
+        
+        try {
+            // Use list to handle multiple results
+            List<FabTaskAssignmentMap> results = fabHierarchyRepository.findAllByPlantCodeAndDepartmentCode(safePlantCode, safeDepartmentCode);
+            log.info("Repository query result count: {}", results.size());
+            
+            if (!results.isEmpty()) {
+                log.info("Found {} entities, returning all records", results.size());
+                return FabHierarchyCheckResponse.foundMultiple(results, safePlantCode, safeDepartmentCode);
+            } else {
+                log.info("No entity found, returning not found response");
+                return FabHierarchyCheckResponse.notFound(safePlantCode, safeDepartmentCode);
+            }
+        } catch (Exception e) {
+            log.error("Error in checkHierarchy", e);
+            throw e;
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public java.util.Optional<FabTaskAssignmentMap> findByPlantCodeAndDepartmentCode(String plantCode, String departmentCode) {
+        return fabHierarchyRepository.findByPlantCodeAndDepartmentCode(safe(plantCode), safe(departmentCode));
+    }
+
+    @Transactional(readOnly = true)
+    public long count() {
+        return fabHierarchyRepository.count();
     }
 
     public FabTaskAssignmentMap insertRecipient(FabTaskAssignmentMap request) {
@@ -62,7 +92,6 @@ public class FabHierarchyService {
                 SELECT id
                 FROM sd_apps_db.app_vg_wbs_department_master
                 WHERE UPPER(TRIM(wbs_department_code)) = UPPER(TRIM(?))
-                LIMIT 1
                 """;
         List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql, code);
         if (rows.isEmpty()) return null;

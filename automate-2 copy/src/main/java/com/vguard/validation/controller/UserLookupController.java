@@ -1,5 +1,6 @@
 package com.vguard.validation.controller;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -14,6 +15,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/users")
+@Slf4j
 public class UserLookupController {
     private final JdbcTemplate jdbc;
 

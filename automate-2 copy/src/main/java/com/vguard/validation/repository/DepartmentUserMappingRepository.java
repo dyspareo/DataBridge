@@ -1,5 +1,6 @@
 package com.vguard.validation.repository;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
@@ -10,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 
 @Repository
+@Slf4j
 public class DepartmentUserMappingRepository {
     private final JdbcTemplate jdbc;
 

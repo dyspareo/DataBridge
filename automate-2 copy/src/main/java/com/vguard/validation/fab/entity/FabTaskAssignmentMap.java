@@ -1,5 +1,6 @@
 package com.vguard.validation.fab.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -12,6 +13,7 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class FabTaskAssignmentMap {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -49,10 +51,10 @@ public class FabTaskAssignmentMap {
     private String cbsGaMailid;
 
     @Column(name = "bussiness_partner1")
-    private String bussinessPartner1;
+    private String businessPartner1;
 
     @Column(name = "bussiness_partner_1_emailid")
-    private String bussinessPartner1Emailid;
+    private String businessPartner1Emailid;
 
     @Column(name = "level1_approver")
     private String level1Approver;
@@ -61,10 +63,10 @@ public class FabTaskAssignmentMap {
     private String level1ApproverEmailid;
 
     @Column(name = "bussiness_partner2")
-    private String bussinessPartner2;
+    private String businessPartner2;
 
     @Column(name = "bussiness_partner_2_emailid")
-    private String bussinessPartner2Emailid;
+    private String businessPartner2Emailid;
 
     @Column(name = "level2_approver")
     private String level2Approver;

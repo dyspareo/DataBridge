@@ -1,5 +1,6 @@
 package com.vguard.validation.controller;
 
+import lombok.extern.slf4j.Slf4j;
 import com.vguard.validation.repository.PlantDepartmentMappingRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,6 +13,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/plant-department")
+@Slf4j
 public class PlantDepartmentMappingController {
     private static final Logger log = LoggerFactory.getLogger(PlantDepartmentMappingController.class);
     private final PlantDepartmentMappingRepository repo;
@@ -32,8 +34,8 @@ public class PlantDepartmentMappingController {
     @PostMapping("/mapping/insert")
     public ResponseEntity<?> insert(@RequestBody Map<String, Object> payload) {
         try {
-            String plantCode = String.valueOf(payload.get("plantCode"));
-            String departmentCode = String.valueOf(payload.get("departmentCode"));
+            String plantCode = payload.get("plantCode") == null ? null : String.valueOf(payload.get("plantCode")).trim();
+            String departmentCode = payload.get("departmentCode") == null ? null : String.valueOf(payload.get("departmentCode")).trim();
             if (plantCode == null || plantCode.isBlank() || departmentCode == null || departmentCode.isBlank()) {
                 return ResponseEntity.badRequest().body(Map.of("success", false, "error", "missing_fields"));
             }

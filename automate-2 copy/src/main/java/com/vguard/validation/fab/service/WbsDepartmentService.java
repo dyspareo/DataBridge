@@ -1,5 +1,6 @@
 package com.vguard.validation.fab.service;
 
+import lombok.extern.slf4j.Slf4j;
 import com.vguard.validation.fab.entity.WbsDepartmentMaster;
 import com.vguard.validation.fab.repository.WbsDepartmentRepository;
 import jakarta.validation.ValidationException;
@@ -13,6 +14,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class WbsDepartmentService {
     private final WbsDepartmentRepository repository;
 

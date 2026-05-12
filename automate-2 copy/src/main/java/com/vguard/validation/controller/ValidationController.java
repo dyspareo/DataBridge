@@ -1,5 +1,6 @@
 package com.vguard.validation.controller;
 
+import lombok.extern.slf4j.Slf4j;
 import com.vguard.validation.model.DepartmentInsertRequest;
 import com.vguard.validation.model.PlantInsertRequest;
 import com.vguard.validation.model.UserResponse;
@@ -19,6 +20,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api")
 @CrossOrigin(origins = "*")
+@Slf4j
 public class ValidationController {
 
     private final ValidationService validationService;

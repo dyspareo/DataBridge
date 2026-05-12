@@ -1,5 +1,8 @@
 (function () {
     'use strict';
+    
+    // Cache busting - force reload
+    console.log('FAP Validation loaded at:', new Date().toISOString());
 
     const API_BASE = (typeof window !== 'undefined' && window.API_BASE != null)
         ? String(window.API_BASE)
@@ -7,6 +10,30 @@
 
     let fapAllResults = [];
     let fapSelectedResult = null;
+
+    // FAP role mapping function
+    const getExpectedRoleByFieldKey = (fieldKey) => {
+        const key = String(fieldKey || '').toLowerCase().trim();
+        const mapping = {
+            initiator: 'INITIATOR',
+            initiator_login_name: 'INITIATOR',
+            reviewer1: 'REVIEWER1',
+            reviewer1_list: 'REVIEWER1',
+            reviewer2: 'REVIEWER2', 
+            reviewer2_list: 'REVIEWER2',
+            approver: 'APPROVER',
+            approver_list: 'APPROVER',
+            cbs: 'CBS_TEAM',
+            cbs_team: 'CBS_TEAM',
+            cbs_member1: 'CBS_TEAM',
+            cbs_member2: 'CBS_TEAM',
+            cbs_member3: 'CBS_TEAM',
+            management: 'MANAGEMENT_APPROVER',
+            management_approver: 'MANAGEMENT_APPROVER',
+            management_approver_list: 'MANAGEMENT_APPROVER'
+        };
+        return mapping[key] || '-';
+    };
     let fapCheckState = {
         plantUser: false,
         departmentUser: false,
@@ -231,7 +258,7 @@
             const row = Array.isArray(excelData[i]) ? excelData[i] : [excelData[i]];
             const emailEntries = emailIndices
                 .map((idx) => ({
-                    fieldName: normalizeCell(headers[idx]) || `Email Column ${idx + 1}`,
+                    fieldName: normalizeCell(headers[idx]) || 'Email',
                     email: normalizeCell(row[idx])
                 }))
                 .filter((entry) => entry.email);
@@ -287,9 +314,25 @@
         const excluded = new Set((excludedIndices || []).filter((idx) => idx >= 0));
         const normalizedHeaders = Array.isArray(headers) ? headers.map((header) => normalizeCell(header).toLowerCase()) : [];
         const indices = [];
+        
+        // FAP-specific role column mapping
+        const roleColumns = [
+            'initiator', 'initiator_login_name', 'initiator email',
+            'reviewer1', 'reviewer1_list', 'reviewer1 email',
+            'reviewer2', 'reviewer2_list', 'reviewer2 email',
+            'approver', 'approver_list', 'approver email',
+            'cbs', 'cbs_team', 'cbs email',
+            'management', 'management_approver', 'management_approver_list', 'management approver email'
+        ];
+        
         normalizedHeaders.forEach((header, index) => {
             if (excluded.has(index)) return;
-            if (header.includes('mail') || header.includes('email')) {
+            
+            // Check if this header matches any FAP role column
+            const isRoleColumn = roleColumns.some(role => header.includes(role));
+            const isGenericEmail = header.includes('mail') || header.includes('email');
+            
+            if (isRoleColumn || isGenericEmail) {
                 indices.push(index);
             }
         });
@@ -349,8 +392,9 @@
                         <col style="width: 18%;">
                         <col style="width: 25%;">
                         <col style="width: 18%;">
-                        <col style="width: 24%;">
                         <col style="width: 15%;">
+                        <col style="width: 15%;">
+                        <col style="width: 9%;">
                     </colgroup>
                     <thead>
                         <tr>
@@ -358,6 +402,7 @@
                             <th>Name / Data</th>
                             <th>Status</th>
                             <th>Message</th>
+                            <th>Expected Role</th>
                             <th>Action</th>
                         </tr>
                     </thead>
@@ -415,15 +460,20 @@
             const value = normalizeCell(row.value) || '-';
             const showAddRole = row.type === 'email' && value !== '-';
             const showInsert = (row.type === 'plant' || row.type === 'department') && status === 'Not Existing' && value !== '-';
+            
+            // Get expected role based on field name
+            const expectedRole = row.type === 'email' && row.field ? getExpectedRoleByFieldKey(row.field) : '-';
+            
             return `
                 <tr data-row-type="${row.type || ''}" ${row.type === 'email' && value !== '-' ? `data-email="${value}"` : ''}>
                     <td class="fap-col-field">${row.field}</td>
                     <td class="fap-col-value">${value}</td>
                     <td class="${cssClass}">${status}</td>
                     <td class="fap-col-message">${normalizeCell(row.message) || '-'}</td>
+                    <td class="fap-col-expected-role">${expectedRole}</td>
                     <td class="fap-col-action">
                         ${showAddRole
-                            ? `<div class="fap-action-wrap"><button class="btn btn-outline-secondary validate-email-btn" data-email="${value}" data-expected-role="-">ADD ROLE</button></div>`
+                            ? `<div class="fap-action-wrap"><button class="btn btn-outline-secondary validate-email-btn" data-email="${value}" data-expected-role="${expectedRole}">ADD ROLE</button></div>`
                             : ''}
                         ${showInsert
                             ? `<div class="fap-action-wrap"><button class="btn btn-success insert-btn" style="background-color:#28a745;border-color:#28a745;color:white;" data-type="${row.type}" data-code="${value}">Insert</button></div>`
@@ -455,8 +505,15 @@
             }
             #fapResultsTable .fap-col-field,
             #fapResultsTable .fap-col-value,
-            #fapResultsTable .fap-col-message {
+            #fapResultsTable .fap-col-message,
+            #fapResultsTable .fap-col-expected-role {
                 word-break: break-word;
+            }
+            #fapResultsTable .fap-col-expected-role {
+                text-align: center;
+                font-weight: 600;
+                color: #6c757d;
+                background-color: #f8f9fa;
             }
             #fapResultsTable .fap-col-action {
                 white-space: nowrap;
