@@ -933,11 +933,12 @@ function ensureXLSX() {
       return;
     }
     const currentModule = (new URLSearchParams(window.location.search).get('module') || 'FAT').toUpperCase();
-    if (currentModule === 'FAC') {
+    if (currentModule === 'FAC' || currentModule === 'FAD') {
       const lcmEmail = h.getAttribute('data-lcm-email') || initiatorEmail;
       const cbs1Email = h.getAttribute('data-cbs1-email') || '';
       const cbs2Email = h.getAttribute('data-cbs2-email') || '';
-      showFACHierarchyModal({
+      showFixedAssetHierarchyModal({
+        module: currentModule,
         plantCode,
         deptCode,
         lcmEmail,
@@ -949,7 +950,9 @@ function ensureXLSX() {
     showHierarchyModal(plantCode, deptCode, initiatorEmail);
   });
 
-  async function showFACHierarchyModal({ plantCode, deptCode, lcmEmail, cbs1Email, cbs2Email }) {
+  async function showFixedAssetHierarchyModal({ module = 'FAC', plantCode, deptCode, lcmEmail, cbs1Email, cbs2Email }) {
+    const moduleCode = String(module || 'FAC').toUpperCase() === 'FAD' ? 'FAD' : 'FAC';
+    const modulePath = moduleCode.toLowerCase();
     const modal = document.getElementById('hierarchyModal');
     const msg = document.getElementById('hierarchyMsg');
     const table = document.getElementById('hierarchyTable');
@@ -959,11 +962,11 @@ function ensureXLSX() {
     // Update title
     try {
       const title = modal.querySelector('.modal-title');
-      if (title) title.textContent = 'FAC Hierarchy Check';
+      if (title) title.textContent = `${moduleCode} Hierarchy Check`;
     } catch (_) {}
 
-    // Configure insert action (opens FAC insert form page)
-    insertBtn.textContent = 'Insert FAC Hierarchy';
+    // Configure insert action (opens module-specific insert form page)
+    insertBtn.textContent = `Insert ${moduleCode} Hierarchy`;
     insertBtn.onclick = () => {
       const qs = new URLSearchParams();
       qs.set('plant_code', plantCode);
@@ -972,10 +975,10 @@ function ensureXLSX() {
       qs.set('cbs_user1', cbs1Email || '');
       qs.set('cbs_user2', cbs2Email || '');
       qs.set('status_id', '1');
-      const url = `fac/fac-hierarchy-insert.html?${qs.toString()}`;
+      const url = `${modulePath}/${modulePath}-hierarchy-insert.html?${qs.toString()}`;
       try {
         if (typeof openModal === 'function') {
-          openModal(url, 'FAC Hierarchy Insert');
+          openModal(url, `${moduleCode} Hierarchy Insert`);
         } else {
           window.open(resolveStaticPageUrl(url), '_blank', 'noopener');
         }
@@ -985,7 +988,7 @@ function ensureXLSX() {
     };
 
     // Reset and show modal
-    msg.textContent = 'Loading FAC hierarchy...';
+    msg.textContent = `Loading ${moduleCode} hierarchy...`;
     const thead = table.querySelector('thead');
     const tbody = table.querySelector('tbody');
     if (tbody) tbody.innerHTML = '';
@@ -1015,24 +1018,24 @@ function ensureXLSX() {
       if (tbody) tbody.style.display = '';
     } catch (_) {}
 
-    // Call FAC check API
+    // Call module-specific check API
     try {
       const q = new URLSearchParams();
       q.set('plantCode', plantCode);
       q.set('deptCode', deptCode);
       if (lcmEmail) q.set('lcmUser', lcmEmail);
-      const res = await fetch(`${API_BASE}/api/fac/hierarchy/check?${q.toString()}`);
+      const res = await fetch(`${API_BASE}/api/${modulePath}/hierarchy/check?${q.toString()}`);
       const json = await res.json().catch(() => null);
       if (!res.ok) {
-        msg.textContent = (json && (json.message || json.error)) ? String(json.message || json.error) : `FAC check failed (HTTP ${res.status}).`;
+        msg.textContent = (json && (json.message || json.error)) ? String(json.message || json.error) : `${moduleCode} check failed (HTTP ${res.status}).`;
         return;
       }
       const rows = (json && json.results) ? json.results : [];
       if (!Array.isArray(rows) || rows.length === 0) {
-        msg.textContent = `No active FAC hierarchy found for Plant ${plantCode}, Dept ${deptCode} (LM: ${lcmEmail || '-'})`;
+        msg.textContent = `No active ${moduleCode} hierarchy found for Plant ${plantCode}, Dept ${deptCode} (LM: ${lcmEmail || '-'})`;
         return;
       }
-      msg.textContent = `Found ${rows.length} active FAC hierarchy record(s).`;
+      msg.textContent = `Found ${rows.length} active ${moduleCode} hierarchy record(s).`;
       if (!tbody) return;
       tbody.innerHTML = '';
       const addCell = (tr, v) => {
@@ -1054,7 +1057,7 @@ function ensureXLSX() {
         tbody.appendChild(tr);
       });
     } catch (e) {
-      msg.textContent = 'Failed to load FAC hierarchy. Check server logs/connection.';
+      msg.textContent = `Failed to load ${moduleCode} hierarchy. Check server logs/connection.`;
     }
   }
 

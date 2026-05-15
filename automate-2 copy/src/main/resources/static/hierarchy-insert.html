@@ -92,6 +92,55 @@
       content: " *";
       color: #ef4444;
     }
+    .fad-section {
+      border: 1px solid #dbeafe;
+      border-radius: 0.5rem;
+      background: #ffffff;
+      margin-bottom: 1.5rem;
+    }
+    .fad-section summary {
+      cursor: pointer;
+      list-style: none;
+      padding: 1rem 1.25rem;
+      background: #eff6ff;
+      color: #1e3a8a;
+      font-weight: 700;
+      border-bottom: 1px solid #dbeafe;
+    }
+    .fad-section summary::-webkit-details-marker {
+      display: none;
+    }
+    .fad-section-body {
+      padding: 1.25rem;
+    }
+    .fad-field-action {
+      display: flex;
+      gap: 0.5rem;
+      align-items: stretch;
+    }
+    .fad-field-action .form-control {
+      min-width: 0;
+    }
+    .fad-status-badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 32px;
+      margin-top: 0.35rem;
+      padding: 0.25rem 0.55rem;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      background: #f3f4f6;
+      color: #4b5563;
+    }
+    .fad-status-badge.existing {
+      background: #dcfce7;
+      color: #166534;
+    }
+    .fad-status-badge.not-existing {
+      background: #fee2e2;
+      color: #991b1b;
+    }
     
     /* Full-width responsive adjustments */
     @media (max-width: 768px) {
@@ -279,6 +328,22 @@
         }
         const formFab = document.getElementById('hierarchyForm');
         formFab.addEventListener('submit', handleFormSubmit);
+        return;
+      }
+
+      if (currentModule === 'FAD') {
+        setupFadMode(params);
+        const loadDataBtnFad = document.getElementById('loadDataBtn');
+        if (loadDataBtnFad) {
+          loadDataBtnFad.style.display = 'inline-block';
+          loadDataBtnFad.innerHTML = '<i class="bi bi-download"></i> Load Data';
+          loadDataBtnFad.addEventListener('click', () => {
+            fillFadFieldsFromParams(params);
+            showToast('FAD data loaded successfully!', 'success');
+          });
+        }
+        const formFad = document.getElementById('hierarchyForm');
+        formFad.addEventListener('submit', handleFormSubmit);
         return;
       }
 
@@ -696,6 +761,128 @@
       if (createdDateEl) createdDateEl.value = now;
     }
 
+    function setupFadMode(params) {
+      document.title = 'FAD Hierarchy Insert – ExcelFlow';
+      const header = document.querySelector('.card-header h3');
+      if (header) header.innerHTML = '<i class="bi bi-diagram-3"></i> FAD Hierarchy Insert';
+
+      document.querySelectorAll('#hierarchyForm .row.mb-4').forEach(row => row.remove());
+
+      const form = document.getElementById('hierarchyForm');
+      const actions = form.querySelector('.d-flex.justify-content-between.mt-4.pt-3.border-top');
+      const fadFields = document.createElement('details');
+      fadFields.id = 'fadFields';
+      fadFields.className = 'fad-section';
+      fadFields.open = true;
+      fadFields.innerHTML = `
+        <summary><i class="bi bi-trash3"></i> FAD</summary>
+        <div class="fad-section-body">
+          <div class="row">
+            <div class="col-md-4 mb-3">
+              <label for="fad_locationCode" class="form-label required">Location Code</label>
+              <input type="text" class="form-control" id="fad_locationCode" required>
+            </div>
+            <div class="col-md-4 mb-3">
+              <label for="fad_department" class="form-label required">Department</label>
+              <input type="text" class="form-control" id="fad_department" required>
+            </div>
+            <div class="col-md-4 mb-3">
+              <label for="fad_initiatorLoginName" class="form-label required">Initiator Login Name</label>
+              <input type="text" class="form-control" id="fad_initiatorLoginName" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="fad_initiatorUserDeptEmail" class="form-label required">Initiator Dept (Email)</label>
+              <div class="fad-field-action">
+                <input type="email" class="form-control" id="fad_initiatorUserDeptEmail" required>
+                <button type="button" class="btn btn-outline-secondary" data-fad-check="location-user" data-fad-email-field="fad_initiatorUserDeptEmail">Validate</button>
+              </div>
+              <span class="fad-status-badge" id="fad_initiatorUserDeptEmail_status">Not validated</span>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="fad_reviewerEmail" class="form-label required">Reviewer (Email)</label>
+              <div class="fad-field-action">
+                <input type="email" class="form-control" id="fad_reviewerEmail" required>
+                <button type="button" class="btn btn-outline-secondary" data-fad-check="department-user" data-fad-email-field="fad_reviewerEmail">Validate</button>
+              </div>
+              <span class="fad-status-badge" id="fad_reviewerEmail_status">Not validated</span>
+            </div>
+            <div class="col-md-4 mb-3">
+              <label for="fad_otherRoleIds" class="form-label">Other Role IDs</label>
+              <input type="number" class="form-control" id="fad_otherRoleIds">
+            </div>
+            <div class="col-md-4 mb-3">
+              <label for="fad_otherRoleName" class="form-label">Other Role Name</label>
+              <input type="text" class="form-control" id="fad_otherRoleName">
+            </div>
+            <div class="col-md-4 mb-3">
+              <label for="fad_statusId" class="form-label required">Status ID</label>
+              <input type="number" class="form-control" id="fad_statusId" value="1" required>
+            </div>
+            <div class="col-md-8 mb-3">
+              <label for="fad_userAssigneesEmail" class="form-label required">User Assignees (Email)</label>
+              <div class="fad-field-action">
+                <input type="email" class="form-control" id="fad_userAssigneesEmail" required>
+                <button type="button" class="btn btn-outline-secondary" data-fad-check="location-user" data-fad-email-field="fad_userAssigneesEmail">Validate</button>
+              </div>
+              <span class="fad-status-badge" id="fad_userAssigneesEmail_status">Not validated</span>
+            </div>
+            <div class="col-md-4 mb-3 d-flex align-items-end">
+              <button type="button" class="btn btn-outline-primary w-100" id="fadLocationDepartmentCheckBtn">Validate Location-Department</button>
+            </div>
+          </div>
+        </div>
+      `;
+      form.insertBefore(fadFields, actions);
+
+      const submitBtn = form.querySelector('button[type="submit"]');
+      if (submitBtn) {
+        submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> Submit Hierarchy';
+      }
+
+      fillFadFieldsFromParams(params);
+      document.querySelectorAll('[data-fad-check]').forEach(button => {
+        button.addEventListener('click', () => validateFadField(button));
+      });
+      document.getElementById('fadLocationDepartmentCheckBtn')?.addEventListener('click', () => {
+        validateFadCheck('location-department', '', 'fadLocationDepartmentCheckBtn');
+      });
+    }
+
+    function fillFadFieldsFromParams(urlParams) {
+      const currentRow = (() => {
+        try {
+          const row = JSON.parse(sessionStorage.getItem('currentHierarchyRow') || '{}');
+          if (row && Object.keys(row).length) return row;
+          const excel = JSON.parse(sessionStorage.getItem('excelData') || '[]');
+          return Array.isArray(excel) && excel.length ? excel[0] : {};
+        } catch (_) {
+          return {};
+        }
+      })();
+
+      const fromRow = (...keys) => {
+        for (const key of keys) {
+          const value = currentRow[key];
+          if (value != null && String(value).trim() !== '') return String(value).trim();
+        }
+        return '';
+      };
+      const set = (id, value) => {
+        const el = document.getElementById(id);
+        if (el && value && !el.value) el.value = value;
+      };
+
+      set('fad_locationCode', urlParams.get('locationCode') || urlParams.get('plant_code') || fromRow('locationCode', 'Location Code', 'plant_code', 'Plant Code'));
+      set('fad_department', urlParams.get('department') || urlParams.get('dept_code') || fromRow('department', 'Department', 'dept_code', 'Department Code'));
+      set('fad_initiatorLoginName', urlParams.get('initiatorLoginName') || urlParams.get('poc_login_name') || fromRow('initiatorLoginName', 'Initiator Login Name'));
+      set('fad_initiatorUserDeptEmail', urlParams.get('initiatorUserDeptEmail') || urlParams.get('poc_email') || fromRow('initiatorUserDeptEmail', 'Initiator Dept Email', 'User Department'));
+      set('fad_reviewerEmail', urlParams.get('reviewerEmail') || urlParams.get('reviewer_email') || fromRow('reviewerEmail', 'Reviewer'));
+      set('fad_otherRoleIds', urlParams.get('otherRoleIds') || fromRow('otherRoleIds', 'Other Role IDs'));
+      set('fad_otherRoleName', urlParams.get('otherRoleName') || fromRow('otherRoleName', 'Other Role Name'));
+      set('fad_userAssigneesEmail', urlParams.get('userAssigneesEmail') || urlParams.get('approver_email') || fromRow('userAssigneesEmail', 'User Assignees Email'));
+      set('fad_statusId', urlParams.get('statusId') || '1');
+    }
+
     function fillFieldsFromUrlParams(urlParams) {
       const FAB_PARAM_MAP = {
         'plant_code': 'plant_code',
@@ -921,6 +1108,41 @@
         }
         return;
       }
+
+      if (currentModule === 'FAD') {
+        const numberOrNull = (id) => {
+          const raw = (document.getElementById(id)?.value || '').trim();
+          return raw ? parseInt(raw, 10) : null;
+        };
+        const payload = {
+          locationCode: (document.getElementById('fad_locationCode')?.value || '').trim(),
+          department: (document.getElementById('fad_department')?.value || '').trim(),
+          initiatorLoginName: (document.getElementById('fad_initiatorLoginName')?.value || '').trim(),
+          initiatorUserDeptEmail: (document.getElementById('fad_initiatorUserDeptEmail')?.value || '').trim(),
+          reviewerEmail: (document.getElementById('fad_reviewerEmail')?.value || '').trim(),
+          otherRoleIds: numberOrNull('fad_otherRoleIds'),
+          otherRoleName: (document.getElementById('fad_otherRoleName')?.value || '').trim(),
+          userAssigneesEmail: (document.getElementById('fad_userAssigneesEmail')?.value || '').trim(),
+          statusId: numberOrNull('fad_statusId') || 1
+        };
+
+        try {
+          const response = await fetch(`${API_BASE}/api/fad/hierarchy`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          const result = await response.json().catch(() => ({}));
+          if (!response.ok || !result.success) {
+            throw new Error(result.message || `HTTP ${response.status}`);
+          }
+          showToast(`FAD hierarchy inserted successfully (${result.totalInserted || 1} row).`, 'success');
+          setTimeout(() => { window.location.href = 'index.html?module=FAD'; }, 1200);
+        } catch (error) {
+          showToast(error.message || 'FAD insert failed', 'danger');
+        }
+        return;
+      }
       
       // FAT insert expects numeric-converted codes; FAB keeps raw values for flexible table columns.
       if (currentModule !== 'FAB') {
@@ -987,6 +1209,59 @@
       // Show the toast
       const toast = new bootstrap.Toast(toastEl);
       toast.show();
+    }
+
+    async function validateFadField(button) {
+      const checkType = button.getAttribute('data-fad-check');
+      const emailFieldId = button.getAttribute('data-fad-email-field');
+      const email = (document.getElementById(emailFieldId)?.value || '').trim();
+      await validateFadCheck(checkType, email, emailFieldId);
+    }
+
+    async function validateFadCheck(checkType, userEmail, targetId) {
+      const statusId = targetId && targetId.startsWith('fad_') ? `${targetId}_status` : null;
+      const badge = statusId ? document.getElementById(statusId) : null;
+      const targetButton = document.getElementById(targetId);
+
+      if (badge) setFadBadge(badge, 'Checking...', '');
+      if (targetButton && targetButton.tagName === 'BUTTON') {
+        targetButton.disabled = true;
+        targetButton.textContent = 'Validating...';
+      }
+
+      try {
+        const payload = {
+          locationCode: (document.getElementById('fad_locationCode')?.value || '').trim(),
+          departmentCode: (document.getElementById('fad_department')?.value || '').trim(),
+          userEmail
+        };
+        const response = await fetch(`${API_BASE}/api/fad/check?checkType=${encodeURIComponent(checkType)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(result.message || `HTTP ${response.status}`);
+        }
+        const text = result.satisfied ? 'Existing OK' : 'Not Existing X';
+        if (badge) setFadBadge(badge, text, result.satisfied ? 'existing' : 'not-existing');
+        if (!badge) showToast(`${checkType}: ${text}`, result.satisfied ? 'success' : 'danger');
+      } catch (error) {
+        if (badge) setFadBadge(badge, 'Not Existing X', 'not-existing');
+        showToast(error.message || 'FAD validation failed', 'danger');
+      } finally {
+        if (targetButton && targetButton.tagName === 'BUTTON') {
+          targetButton.disabled = false;
+          targetButton.textContent = 'Validate Location-Department';
+        }
+      }
+    }
+
+    function setFadBadge(badge, text, stateClass) {
+      badge.textContent = text;
+      badge.classList.remove('existing', 'not-existing');
+      if (stateClass) badge.classList.add(stateClass);
     }
 
     // Backend helpers: fetch plant and department names by code
